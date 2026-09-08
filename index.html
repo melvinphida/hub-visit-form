@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Driver Hub Visit — Bolt Operations</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -14,15 +15,27 @@
     --danger: #c0392b; --accent: #1a5c8c; --accent-bg: #e8f0f5; --accent-border: #a3c4d9;
     --radius: 8px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
-  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; padding: 2rem 1rem 4rem; }
-  .page-header { max-width: 720px; margin: 0 auto 2rem; }
-  .brand-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+
+  /* ---- Top nav ---- */
+  .top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .brand-bar { display: flex; align-items: center; gap: 10px; padding: 1rem 0; }
   .bolt-logo { width: 32px; height: 32px; background: #34d058; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #0a2e18; }
-  .brand-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .brand-name { font-size: 15px; font-weight: 600; }
   .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
-  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; }
-  .page-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .nav-tabs { display: flex; gap: 0; }
+  .nav-tab { padding: 1.1rem 1.5rem; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.12s, border-color 0.12s; }
+  .nav-tab:hover { color: var(--text-primary); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* ---- Panels ---- */
+  .panel { display: none; padding: 2rem 1rem 4rem; }
+  .panel.active { display: block; }
+
+  /* ---- Form styles ---- */
   .form-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+  .page-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem; max-width: 720px; margin-left: auto; margin-right: auto; }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; max-width: 720px; margin-left: auto; margin-right: auto; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
   .section-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-bg); border: 1px solid var(--accent-border); font-size: 11px; font-weight: 600; color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -43,11 +56,6 @@
   input::placeholder, textarea::placeholder { color: var(--text-muted); }
   select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%239e9d99' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; cursor: pointer; }
   textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
-  .hvd-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-  .hvd-btn { padding: 7px 14px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.12s; font-family: var(--font); }
-  .hvd-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
-  .hvd-btn.selected { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); font-weight: 500; }
-  .hvd-btn.historical.selected { border-color: #c4b5a3; background: #f5efe8; color: #7a5c3a; }
   .sentiment-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .sentiment-btn { padding: 7px 14px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.12s; font-family: var(--font); }
   .sentiment-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
@@ -66,7 +74,10 @@
   .success-banner .icon { font-size: 36px; margin-bottom: 12px; }
   .success-banner h2 { font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
   .success-banner p { font-size: 14px; color: var(--text-secondary); }
-  /* Choices.js overrides */
+  .quick-close-btn { font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 20px; padding: 7px 16px; cursor: pointer; transition: all 0.12s; }
+  .quick-close-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
+  .quick-close-btn.selected { background: #fde68a; border-color: #f0d080; color: #7a5c0a; font-weight: 600; }
+  /* Choices.js */
   .choices { width: 100%; }
   .choices__inner { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; min-height: 42px; font-size: 14px; font-family: var(--font); }
   .choices__inner:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); background: var(--surface); }
@@ -78,177 +89,334 @@
   .choices__list--multiple .choices__item { background: var(--accent); border: none; border-radius: 4px; font-size: 13px; font-family: var(--font); padding: 3px 8px; margin: 2px; }
   .choices__button { filter: brightness(10); opacity: 0.8; border-left: 1px solid rgba(255,255,255,0.3); }
   .choices__placeholder { color: var(--text-muted); opacity: 1; }
+
+  /* ---- Dashboard styles ---- */
+  .dash-wrap { max-width: 1100px; margin: 0 auto; }
+  .dash-header { margin-bottom: 1.5rem; }
+  .dash-header h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .dash-header p { font-size: 14px; color: var(--text-secondary); }
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: flex-end; }
+  .filters .field { min-width: 160px; }
+  .filters label { font-size: 11px; }
+  .btn-filter { font-family: var(--font); font-size: 13px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); padding: 9px 18px; cursor: pointer; align-self: flex-end; }
+  .btn-filter:hover { background: #144d78; }
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .stat-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -1px; }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; }
+  .chart-wrap { position: relative; height: 240px; }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+  .table-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table-card th { background: var(--surface-alt); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); }
+  .table-card td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: top; }
+  .table-card tr:last-child td { border-bottom: none; }
+  .table-card tr:hover td { background: var(--surface-alt); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-blue { background: var(--accent-bg); color: var(--accent); }
+  .badge-yellow { background: #fef3e2; color: #b45309; }
+  .badge-green { background: #e8f5ee; color: #1a8c4e; }
+  .badge-red { background: #fdf0ee; color: var(--danger); }
+  .loading-msg { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 14px; }
+  .dash-section-title { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
 </style>
 </head>
 <body>
 
-<div class="page-header">
+<!-- Top navigation -->
+<div class="top-nav">
   <div class="brand-bar">
     <div class="bolt-logo">⚡</div>
     <span class="brand-name">Bolt</span>
-    <span class="brand-sub">Operations · Hub Visit Log</span>
+    <span class="brand-sub">Operations · Hub Visit</span>
   </div>
-  <h1>Driver hub visit</h1>
-  <p class="page-desc">Record a driver's hub visit. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPanel('form', this)">Log visit</button>
+    <button class="nav-tab" onclick="switchPanel('dashboard', this)">Dashboard</button>
+  </div>
 </div>
 
-<form id="hubForm" class="form-wrap" novalidate>
-
-  <!-- Section 1: Driver details -->
-  <div class="card">
-    <div class="card-header"><div class="section-num">1</div><span class="card-title">Driver details</span></div>
-    <div class="card-body">
-      <div class="field-row">
-        <div class="field" id="f-driverId">
-          <label>Driver ID <span class="req">*</span></label>
-          <input type="text" name="driverId" placeholder="e.g. 7291048" autocomplete="off">
-          <span class="error-msg">Driver ID is required</span>
-        </div>
-        <div class="field" id="f-date">
-          <label>Visit date <span class="req">*</span></label>
-          <input type="date" name="visitDate" id="visitDate">
-          <span class="error-msg">Date is required</span>
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field" id="f-hub">
-          <label>Hub location <span class="req">*</span></label>
-          <select name="hub">
-            <option value="">Select hub…</option>
-            <option>Birmingham</option>
-            <option>Bristol</option>
-            <option>London</option>
-            <option>Manchester</option>
-            <option>Nottingham</option>
-          </select>
-          <span class="error-msg">Please select a hub location</span>
-        </div>
-        <div class="field">
-          <label>OC name</label>
-          <input type="text" name="ocName" placeholder="Team member name">
-        </div>
-      </div>
-      <div class="field">
-        <label>HVD status</label>
-        <div class="hvd-row">
-          <button type="button" class="hvd-btn" data-val="HVD">HVD</button>
-          <button type="button" class="hvd-btn historical" data-val="Historical">Historical HVD</button>
-          <button type="button" class="hvd-btn" data-val="No">Not HVD</button>
-        </div>
-        <input type="hidden" name="hvdStatus" id="hvdStatus">
-      </div>
-    </div>
+<!-- ===================== FORM PANEL ===================== -->
+<div id="panel-form" class="panel active">
+  <div style="max-width:720px;margin:0 auto 1.5rem;">
+    <h1>Driver hub visit</h1>
+    <p class="page-desc" style="margin:6px 0 0;">Record a driver's hub visit. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
   </div>
 
-  <!-- Section 2: Visit reason -->
-  <div class="card">
-    <div class="card-header"><div class="section-num">2</div><span class="card-title">Visit reason</span></div>
-    <div class="card-body">
-      <div class="field" id="f-reasons">
-        <label>Reason(s) for visit <span class="req">*</span></label>
-        <select name="reasons" id="reasonsSelect" multiple>
-          <option value="App crash">App crash</option>
-          <option value="Cashout issue">Cashout issue</option>
-          <option value="Cleaning fee issue">Cleaning fee issue</option>
-          <option value="Invoice related">Invoice related</option>
-          <option value="Login issues">Login issues</option>
-          <option value="Navigation issue">Navigation issue</option>
-          <option value="Not getting orders">Not getting orders</option>
-          <option value="Parking fee">Parking fee</option>
-          <option value="Payment issue">Payment issue</option>
-          <option value="Pickup point issue">Pickup point issue</option>
-          <option value="Safety/compliance blocks">Safety / compliance blocks</option>
-          <option value="Selfie verification">Selfie verification</option>
-          <option value="Toll fee">Toll fee</option>
-          <option value="Other">Other</option>
+  <form id="hubForm" class="form-wrap" novalidate>
+
+    <!-- Section 1 -->
+    <div class="card">
+      <div class="card-header"><div class="section-num">1</div><span class="card-title">Driver details</span></div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field" id="f-driverId">
+            <label>Driver ID <span class="req">*</span></label>
+            <input type="text" name="driverId" placeholder="e.g. 7291048" autocomplete="off">
+            <span class="error-msg">Driver ID is required</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field" id="f-hub">
+            <label>Hub location <span class="req">*</span></label>
+            <select name="hub">
+              <option value="">Select hub…</option>
+              <option>Birmingham</option>
+              <option>Bristol</option>
+              <option>London</option>
+              <option>Manchester</option>
+              <option>Nottingham</option>
+            </select>
+            <span class="error-msg">Please select a hub location</span>
+          </div>
+          <div class="field">
+            <label>OC name</label>
+            <input type="text" name="ocName" placeholder="Team member name">
+          </div>
+        </div>
+        <div id="quickCloseBar" style="display:none; flex-direction:column; gap:8px; background:#fff8e8; border:1px solid #f0d080; border-radius:8px; padding:12px 14px;">
+          <span style="font-size:12px; font-weight:600; color:#7a5c0a; text-transform:uppercase; letter-spacing:0.4px;">Resolve &amp; close</span>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="quick-close-btn" data-val="Car Application">🚗 Car application</button>
+            <button type="button" class="quick-close-btn" data-val="Upload Document">📄 Upload document</button>
+          </div>
+          <input type="hidden" name="quickClose" id="quickCloseVal">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="card">
+      <div class="card-header"><div class="section-num">2</div><span class="card-title">Visit reason</span></div>
+      <div class="card-body">
+        <div class="field" id="f-reasons">
+          <label>Reason(s) for visit <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:11px;">— not needed if resolve &amp; close selected above</span></label>
+          <select name="reasons" id="reasonsSelect" multiple>
+            <option value="Account Migration">Account Migration</option>
+            <option value="Activity/Driver Score/BQS Appeal">Activity / Driver Score / BQS Appeal</option>
+            <option value="App crash">App crash</option>
+            <option value="App Query">App Query</option>
+            <option value="Blocked Account">Blocked Account</option>
+            <option value="Branding Enquiry">Branding Enquiry</option>
+            <option value="Car Application">Car Application</option>
+            <option value="Cashout issue">Cashout issue</option>
+            <option value="Category Issue">Category Issue</option>
+            <option value="Cleaning fee issue">Cleaning fee issue</option>
+            <option value="Document Verification">Document Verification</option>
+            <option value="Driver Balance/Commission">Driver Balance / Commission</option>
+            <option value="Fleet Account">Fleet Account</option>
+            <option value="General Enquiry">General Enquiry</option>
+            <option value="In Person Guidance">In Person Guidance</option>
+            <option value="Invoice related">Invoice related</option>
+            <option value="Lead Registration">Lead Registration</option>
+            <option value="Legal Requirements">Legal Requirements</option>
+            <option value="Linking Adding Vehicle">Linking Adding Vehicle</option>
+            <option value="Login issues">Login issues</option>
+            <option value="Lost Item">Lost Item</option>
+            <option value="Navigation issue">Navigation issue</option>
+            <option value="Not getting orders">Not getting orders</option>
+            <option value="Parking fee">Parking fee</option>
+            <option value="Payment issue">Payment issue</option>
+            <option value="Payment Payout Query">Payment Payout Query</option>
+            <option value="Pickup point issue">Pickup point issue</option>
+            <option value="Reactivation">Reactivation</option>
+            <option value="Regulatory Mandated Hub Activation">Regulatory Mandated Hub Activation</option>
+            <option value="Rider Charged More Than Expected">Rider Charged More Than Expected</option>
+            <option value="Safety">Safety</option>
+            <option value="Safety/compliance blocks">Safety / Compliance Blocks</option>
+            <option value="Selfie Check Failure">Selfie Check Failure</option>
+            <option value="Selfie verification">Selfie Verification</option>
+            <option value="Toll fee">Toll fee</option>
+            <option value="Update Profile Details">Update Profile Details</option>
+            <option value="Upload Document">Upload Document</option>
+            <option value="Other">Other</option>
+          </select>
+          <span class="error-msg">Select at least one reason</span>
+        </div>
+        <div class="field">
+          <label>Additional notes</label>
+          <textarea name="reasonNotes" rows="2" placeholder="Any extra detail on why the driver visited…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="card">
+      <div class="card-header"><div class="section-num">3</div><span class="card-title">Resolution &amp; feedback</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label>Feedback type</label>
+          <div class="sentiment-row">
+            <button type="button" class="sentiment-btn" data-val="Complaint">Complaint</button>
+            <button type="button" class="sentiment-btn" data-val="Suggestion">Suggestion</button>
+            <button type="button" class="sentiment-btn" data-val="Praise">Praise</button>
+            <button type="button" class="sentiment-btn" data-val="Question">Question</button>
+            <button type="button" class="sentiment-btn" data-val="Incident report">Incident report</button>
+          </div>
+          <input type="hidden" name="feedbackType" id="feedbackType">
+        </div>
+        <div class="field">
+          <label>Driver feedback / notes</label>
+          <textarea name="driverFeedback" rows="3" placeholder="Any feedback or notes from the driver…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="submit-bar">
+        <button type="button" class="btn-ghost" onclick="resetForm()">Clear form</button>
+        <button type="submit" class="btn-primary" id="submitBtn">Save hub visit</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="success-banner" id="successBanner">
+    <div class="icon">✅</div>
+    <h2>Hub visit saved</h2>
+    <p>The visit has been logged. <a href="#" onclick="showForm(); return false;" style="color:var(--accent)">Log another visit</a></p>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD PANEL ===================== -->
+<div id="panel-dashboard" class="panel">
+  <div class="dash-wrap">
+    <div class="dash-header">
+      <h2>Hub visit dashboard</h2>
+      <p>Live data from your Google Sheet. Use filters to explore by city and date range.</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="field">
+        <label>Hub / City</label>
+        <select id="filterHub">
+          <option value="">All hubs</option>
+          <option>Birmingham</option>
+          <option>Bristol</option>
+          <option>London</option>
+          <option>Manchester</option>
+          <option>Nottingham</option>
         </select>
-        <span class="error-msg">Select at least one reason</span>
       </div>
       <div class="field">
-        <label>Additional notes</label>
-        <textarea name="reasonNotes" rows="2" placeholder="Any extra detail on why the driver visited…"></textarea>
+        <label>From date</label>
+        <input type="date" id="filterFrom">
+      </div>
+      <div class="field">
+        <label>To date</label>
+        <input type="date" id="filterTo">
+      </div>
+      <button class="btn-filter" onclick="applyFilters()">Apply</button>
+      <button class="btn-ghost" onclick="clearFilters()" style="align-self:flex-end;">Clear</button>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total visits</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub">in selected period</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Complaints</div>
+        <div class="stat-value" id="statComplaints">—</div>
+        <div class="stat-sub">feedback type</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Praise</div>
+        <div class="stat-value" id="statPraise">—</div>
+        <div class="stat-sub">feedback type</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Quick closes</div>
+        <div class="stat-value" id="statQuick">—</div>
+        <div class="stat-sub">car app + doc upload</div>
       </div>
     </div>
-  </div>
 
-  <!-- Section 3: Resolution & feedback -->
-  <div class="card">
-    <div class="card-header"><div class="section-num">3</div><span class="card-title">Resolution &amp; feedback</span></div>
-    <div class="card-body">
-      <div class="field-row">
-        <div class="field">
-          <label>Issue resolved?</label>
-          <select name="resolved">
-            <option value="">Select…</option>
-            <option>Yes — fully resolved</option>
-            <option>Partially resolved</option>
-            <option>No — escalated</option>
-            <option>No — awaiting response</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Follow-up required</label>
-          <select name="followUp"><option value="No">No</option><option value="Yes">Yes</option></select>
-        </div>
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Visits by hub</div>
+        <div class="chart-wrap"><canvas id="chartHub"></canvas></div>
       </div>
-      <div class="field">
-        <label>Freebies given</label>
-        <input type="text" name="freebies" placeholder="e.g. Water bottle, air freshener…">
+      <div class="chart-card">
+        <div class="chart-title">Feedback type breakdown</div>
+        <div class="chart-wrap"><canvas id="chartFeedback"></canvas></div>
       </div>
-      <div class="field">
-        <label>Feedback type</label>
-        <div class="sentiment-row">
-          <button type="button" class="sentiment-btn" data-val="Complaint">Complaint</button>
-          <button type="button" class="sentiment-btn" data-val="Suggestion">Suggestion</button>
-          <button type="button" class="sentiment-btn" data-val="Praise">Praise</button>
-          <button type="button" class="sentiment-btn" data-val="Question">Question</button>
-          <button type="button" class="sentiment-btn" data-val="Incident report">Incident report</button>
-        </div>
-        <input type="hidden" name="feedbackType" id="feedbackType">
+      <div class="chart-card full">
+        <div class="chart-title">Top visit reasons</div>
+        <div class="chart-wrap" style="height:300px"><canvas id="chartReasons"></canvas></div>
       </div>
-      <div class="field">
-        <label>Driver feedback</label>
-        <textarea name="driverFeedback" rows="3" placeholder="Any feedback the driver shared…"></textarea>
-      </div>
-      <div class="field">
-        <label>Internal notes</label>
-        <textarea name="internalNotes" rows="2" placeholder="Any context for your team…"></textarea>
+      <div class="chart-card full">
+        <div class="chart-title">Visits over time</div>
+        <div class="chart-wrap"><canvas id="chartTime"></canvas></div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="submit-bar">
-      <button type="button" class="btn-ghost" onclick="resetForm()">Clear form</button>
-      <button type="submit" class="btn-primary" id="submitBtn">Save hub visit</button>
+    <!-- Recent entries table -->
+    <div class="dash-section-title">Recent visits</div>
+    <div class="table-card">
+      <div id="tableBody"><div class="loading-msg">Loading data…</div></div>
     </div>
   </div>
-
-</form>
-
-<div class="success-banner" id="successBanner">
-  <div class="icon">✅</div>
-  <h2>Hub visit saved</h2>
-  <p>The visit has been logged. <a href="#" onclick="showForm(); return false;" style="color:var(--accent)">Log another visit</a></p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBANXreFyynxjLO1ddeEYK7O5T5QXA2FYN-OwaRky4SgGLtyfXt4gqyYmnu3BS8jZiFA/exec';
 
-  // Set today's date
-  document.getElementById('visitDate').valueAsDate = new Date();
+  /* ---- Tab switching ---- */
+  function switchPanel(name, btn) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'dashboard') loadDashboard();
+  }
 
-  // HVD buttons
-  document.querySelectorAll('.hvd-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.hvd-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      document.getElementById('hvdStatus').value = btn.dataset.val;
+  /* ---- Show/hide quick close ---- */
+  function checkQuickClose() {
+    const driverIdVal = document.getElementById('hubForm').elements['driverId'].value.trim();
+    const hubVal = document.getElementById('hubForm').elements['hub'].value.trim();
+    const bar = document.getElementById('quickCloseBar');
+    bar.style.display = (driverIdVal && hubVal) ? 'flex' : 'none';
+  }
+  document.querySelector('input[name="driverId"]').addEventListener('input', checkQuickClose);
+  document.querySelector('select[name="hub"]').addEventListener('change', checkQuickClose);
+
+  /* ---- Quick close buttons ---- */
+  document.querySelectorAll('.quick-close-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const form = document.getElementById('hubForm');
+      const driverIdVal = form.elements['driverId'].value.trim();
+      const hubVal = form.elements['hub'].value.trim();
+      if (!driverIdVal) { document.getElementById('f-driverId').classList.add('has-error'); return; }
+      if (!hubVal) { document.getElementById('f-hub').classList.add('has-error'); return; }
+      document.querySelectorAll('.quick-close-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+      const originalText = this.textContent;
+      this.textContent = 'Saving…'; this.disabled = true;
+      const data = {
+        driverId: driverIdVal, visitDate: new Date().toLocaleDateString('en-GB'),
+        hub: hubVal, ocName: form.elements['ocName'].value || '',
+        reasons: this.dataset.val, reasonNotes: '', feedbackType: '', driverFeedback: '',
+      };
+      try {
+        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        form.style.display = 'none';
+        document.getElementById('successBanner').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch { alert('Could not save. Try again.'); this.textContent = originalText; this.disabled = false; this.classList.remove('selected'); }
     });
   });
 
-  // Sentiment buttons
+  /* ---- Sentiment buttons ---- */
   document.querySelectorAll('.sentiment-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.sentiment-btn').forEach(b => b.classList.remove('selected'));
@@ -257,111 +425,235 @@
     });
   });
 
-  // Choices.js searchable multi-select
+  /* ---- Choices.js ---- */
   const reasonsChoice = new Choices('#reasonsSelect', {
-    removeItemButton: true,
-    searchEnabled: true,
-    searchPlaceholderValue: 'Type to search…',
-    placeholderValue: 'Select reason(s)…',
-    noResultsText: 'No match found',
-    itemSelectText: '',
-    shouldSort: false,
+    removeItemButton: true, searchEnabled: true,
+    searchPlaceholderValue: 'Type to search…', placeholderValue: 'Select reason(s)…',
+    noResultsText: 'No match found', itemSelectText: '', shouldSort: false,
   });
-
   document.getElementById('reasonsSelect').addEventListener('change', () => {
     document.getElementById('f-reasons').classList.remove('has-error');
   });
 
-  // Validate
+  /* ---- Validate ---- */
   function validate() {
     let valid = true;
-    const form = document.getElementById('hubForm');
-
-    [{ id: 'f-driverId', name: 'driverId' }, { id: 'f-date', name: 'visitDate' }, { id: 'f-hub', name: 'hub' }].forEach(({ id, name }) => {
+    [{ id: 'f-driverId', name: 'driverId' }, { id: 'f-hub', name: 'hub' }].forEach(({ id, name }) => {
       const wrapper = document.getElementById(id);
-      const el = form.elements[name];
+      const el = document.getElementById('hubForm').elements[name];
       if (!el || !el.value.trim()) { wrapper.classList.add('has-error'); valid = false; }
       else wrapper.classList.remove('has-error');
     });
-
-    const reasonsWrapper = document.getElementById('f-reasons');
-    if (!reasonsChoice.getValue(true).length) { reasonsWrapper.classList.add('has-error'); valid = false; }
-    else reasonsWrapper.classList.remove('has-error');
-
+    const rw = document.getElementById('f-reasons');
+    if (!reasonsChoice.getValue(true).length) { rw.classList.add('has-error'); valid = false; }
+    else rw.classList.remove('has-error');
     return valid;
   }
 
-  // Submit
+  /* ---- Submit ---- */
   document.getElementById('hubForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    if (!validate()) {
-      document.querySelector('.has-error').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-
+    if (!validate()) { document.querySelector('.has-error').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     const btn = document.getElementById('submitBtn');
     btn.textContent = 'Saving…'; btn.disabled = true;
-
     const form = document.getElementById('hubForm');
     const data = {
-      driverId:       form.elements['driverId'].value,
-      visitDate:      form.elements['visitDate'].value,
-      hub:            form.elements['hub'].value,
-      ocName:         form.elements['ocName'].value,
-      hvdStatus:      document.getElementById('hvdStatus').value,
-      reasons:        reasonsChoice.getValue(true).join(', '),
-      reasonNotes:    form.elements['reasonNotes'].value,
-      resolved:       form.elements['resolved'].value,
-      followUp:       form.elements['followUp'].value,
-      freebies:       form.elements['freebies'].value,
-      feedbackType:   document.getElementById('feedbackType').value,
-      driverFeedback: form.elements['driverFeedback'].value,
-      internalNotes:  form.elements['internalNotes'].value,
+      driverId: form.elements['driverId'].value, visitDate: new Date().toLocaleDateString('en-GB'),
+      hub: form.elements['hub'].value, ocName: form.elements['ocName'].value,
+      reasons: reasonsChoice.getValue(true).join(', '), reasonNotes: form.elements['reasonNotes'].value,
+      feedbackType: document.getElementById('feedbackType').value, driverFeedback: form.elements['driverFeedback'].value,
     };
-
     try {
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      document.getElementById('hubForm').style.display = 'none';
+      await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      form.style.display = 'none';
       document.getElementById('successBanner').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      alert('Could not save. Check your connection and try again.');
-      btn.textContent = 'Save hub visit'; btn.disabled = false;
-    }
+    } catch { alert('Could not save. Try again.'); btn.textContent = 'Save hub visit'; btn.disabled = false; }
   });
 
-  // Reset
+  /* ---- Reset ---- */
   function resetForm() {
     if (!confirm('Clear all fields?')) return;
     document.getElementById('hubForm').reset();
-    document.getElementById('visitDate').valueAsDate = new Date();
-    document.querySelectorAll('.hvd-btn, .sentiment-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('hvdStatus').value = '';
+    document.querySelectorAll('.sentiment-btn, .quick-close-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('feedbackType').value = '';
+    document.getElementById('quickCloseVal').value = '';
+    document.getElementById('quickCloseBar').style.display = 'none';
     reasonsChoice.removeActiveItems();
     document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
-    const btn = document.getElementById('submitBtn');
-    btn.textContent = 'Save hub visit'; btn.disabled = false;
+    document.getElementById('submitBtn').textContent = 'Save hub visit';
+    document.getElementById('submitBtn').disabled = false;
   }
-
   function showForm() {
     document.getElementById('hubForm').style.display = '';
     document.getElementById('successBanner').style.display = 'none';
     resetForm();
   }
-
-  // Clear errors on input
-  ['f-driverId', 'f-date', 'f-hub'].forEach(id => {
-    document.getElementById(id).querySelectorAll('input, select').forEach(el => {
-      el.addEventListener('input', () => document.getElementById(id).classList.remove('has-error'));
-      el.addEventListener('change', () => document.getElementById(id).classList.remove('has-error'));
+  ['f-driverId', 'f-hub'].forEach(id => {
+    const w = document.getElementById(id);
+    if (w) w.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', () => w.classList.remove('has-error'));
+      el.addEventListener('change', () => w.classList.remove('has-error'));
     });
   });
+
+  /* ======================================================
+     DASHBOARD
+  ====================================================== */
+  let allData = [];
+  let charts = {};
+
+  async function loadDashboard() {
+    document.getElementById('tableBody').innerHTML = '<div class="loading-msg">Loading data…</div>';
+    try {
+      const res = await fetch(SCRIPT_URL + '?action=getData');
+      const json = await res.json();
+      allData = json.data || [];
+      setDefaultDates();
+      applyFilters();
+    } catch (err) {
+      document.getElementById('tableBody').innerHTML = '<div class="loading-msg">Could not load data. Make sure the Apps Script is deployed correctly.</div>';
+    }
+  }
+
+  function setDefaultDates() {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('filterTo').valueAsDate = today;
+    document.getElementById('filterFrom').valueAsDate = firstOfMonth;
+  }
+
+  function parseDate(str) {
+    if (!str) return null;
+    const parts = str.split('/');
+    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+    return new Date(str);
+  }
+
+  function applyFilters() {
+    const hub = document.getElementById('filterHub').value;
+    const from = document.getElementById('filterFrom').value ? new Date(document.getElementById('filterFrom').value) : null;
+    const to = document.getElementById('filterTo').value ? new Date(document.getElementById('filterTo').value) : null;
+    if (to) to.setHours(23, 59, 59);
+
+    let filtered = allData.filter(row => {
+      const rowDate = parseDate(row.visitDate);
+      if (hub && row.hub !== hub) return false;
+      if (from && rowDate && rowDate < from) return false;
+      if (to && rowDate && rowDate > to) return false;
+      return true;
+    });
+
+    renderStats(filtered);
+    renderCharts(filtered);
+    renderTable(filtered);
+  }
+
+  function clearFilters() {
+    document.getElementById('filterHub').value = '';
+    setDefaultDates();
+    applyFilters();
+  }
+
+  function renderStats(data) {
+    document.getElementById('statTotal').textContent = data.length;
+    document.getElementById('statComplaints').textContent = data.filter(r => r.feedbackType === 'Complaint').length;
+    document.getElementById('statPraise').textContent = data.filter(r => r.feedbackType === 'Praise').length;
+    document.getElementById('statQuick').textContent = data.filter(r => r.reasons === 'Car Application' || r.reasons === 'Upload Document').length;
+  }
+
+  function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+  function renderCharts(data) {
+    // Visits by hub
+    destroyChart('hub');
+    const hubs = ['Birmingham', 'Bristol', 'London', 'Manchester', 'Nottingham'];
+    const hubCounts = hubs.map(h => data.filter(r => r.hub === h).length);
+    charts['hub'] = new Chart(document.getElementById('chartHub'), {
+      type: 'bar',
+      data: { labels: hubs, datasets: [{ data: hubCounts, backgroundColor: '#1a5c8c', borderRadius: 6 }] },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
+    });
+
+    // Feedback type
+    destroyChart('feedback');
+    const ftypes = ['Complaint', 'Suggestion', 'Praise', 'Question', 'Incident report'];
+    const ftColors = ['#c0392b', '#f59e0b', '#1a8c4e', '#1a5c8c', '#7c3aed'];
+    const ftCounts = ftypes.map(f => data.filter(r => r.feedbackType === f).length);
+    charts['feedback'] = new Chart(document.getElementById('chartFeedback'), {
+      type: 'doughnut',
+      data: { labels: ftypes, datasets: [{ data: ftCounts, backgroundColor: ftColors, borderWidth: 2 }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, maintainAspectRatio: false }
+    });
+
+    // Top reasons
+    destroyChart('reasons');
+    const reasonMap = {};
+    data.forEach(row => {
+      if (!row.reasons) return;
+      row.reasons.split(',').forEach(r => {
+        const k = r.trim();
+        if (k) reasonMap[k] = (reasonMap[k] || 0) + 1;
+      });
+    });
+    const sortedReasons = Object.entries(reasonMap).sort((a, b) => b[1] - a[1]).slice(0, 12);
+    charts['reasons'] = new Chart(document.getElementById('chartReasons'), {
+      type: 'bar',
+      data: {
+        labels: sortedReasons.map(r => r[0]),
+        datasets: [{ data: sortedReasons.map(r => r[1]), backgroundColor: '#a3c4d9', borderRadius: 4 }]
+      },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
+    });
+
+    // Visits over time
+    destroyChart('time');
+    const timeMap = {};
+    data.forEach(row => {
+      const d = row.visitDate ? row.visitDate.substring(0, 10) : '';
+      if (d) timeMap[d] = (timeMap[d] || 0) + 1;
+    });
+    const timeSorted = Object.entries(timeMap).sort((a, b) => a[0].localeCompare(b[0]));
+    charts['time'] = new Chart(document.getElementById('chartTime'), {
+      type: 'line',
+      data: {
+        labels: timeSorted.map(d => d[0]),
+        datasets: [{ data: timeSorted.map(d => d[1]), borderColor: '#1a5c8c', backgroundColor: 'rgba(26,92,140,0.08)', fill: true, tension: 0.3, pointRadius: 3 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
+    });
+  }
+
+  function feedbackBadge(type) {
+    const map = { Complaint: 'badge-red', Praise: 'badge-green', Suggestion: 'badge-yellow', Question: 'badge-blue', 'Incident report': 'badge-red' };
+    return type ? `<span class="badge ${map[type] || 'badge-blue'}">${type}</span>` : '—';
+  }
+
+  function renderTable(data) {
+    if (!data.length) {
+      document.getElementById('tableBody').innerHTML = '<div class="loading-msg">No visits found for this filter.</div>';
+      return;
+    }
+    const recent = [...data].reverse().slice(0, 50);
+    const rows = recent.map(r => `
+      <tr>
+        <td>${r.visitDate || '—'}</td>
+        <td><strong>${r.driverId || '—'}</strong></td>
+        <td>${r.hub || '—'}</td>
+        <td>${r.ocName || '—'}</td>
+        <td style="max-width:200px">${r.reasons || '—'}</td>
+        <td>${feedbackBadge(r.feedbackType)}</td>
+        <td style="max-width:180px;color:var(--text-secondary)">${r.driverFeedback || '—'}</td>
+      </tr>`).join('');
+
+    document.getElementById('tableBody').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Driver ID</th><th>Hub</th><th>OC</th><th>Reasons</th><th>Feedback</th><th>Notes</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
 </script>
 </body>
 </html>
