@@ -36,6 +36,15 @@
     .dashboard-wrap { max-width: 1400px; margin: 0 auto; }
     h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 1.5rem; }
     
+    /* ---- Filter Section ---- */
+    .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+    .filter-group select { font-family: var(--font); font-size: 14px; color: var(--text-primary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer; }
+    .filter-group select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); background: var(--surface); }
+    .btn-reset { font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 18px; cursor: pointer; transition: background 0.2s; }
+    .btn-reset:hover { background: var(--bg); border-color: var(--border-strong); }
+    
     .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
     .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
     .metric-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
@@ -86,6 +95,8 @@
       .metrics-grid { grid-template-columns: repeat(2, 1fr); }
       .input-group { flex-direction: column; }
       .input-field { width: 100%; }
+      .filter-section { flex-direction: column; }
+      .filter-group { width: 100%; }
     }
   </style>
 </head>
@@ -112,27 +123,44 @@
     <!-- Success Message -->
     <div class="success-msg" id="successMsg">✅ Data loaded successfully!</div>
 
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="filter-group">
+        <label>Month</label>
+        <select id="monthFilter" onchange="applyFilter()">
+          <option value="">Select month...</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Year</label>
+        <select id="yearFilter" onchange="applyFilter()">
+          <option value="">Select year...</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilter()">Reset Filter</button>
+    </div>
+
     <!-- Metrics -->
     <div class="metrics-grid" id="metricsGrid">
       <div class="metric-card">
         <div class="metric-label">Total Visits</div>
         <div class="metric-value" id="totalVisits">0</div>
-        <div class="metric-sub">All time</div>
+        <div class="metric-sub" id="totalSub">All time</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">This Month</div>
         <div class="metric-value" id="monthVisits">0</div>
-        <div class="metric-sub">Current month</div>
+        <div class="metric-sub" id="monthSub">Current month</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">This Week</div>
         <div class="metric-value" id="weekVisits">0</div>
-        <div class="metric-sub">Current week</div>
+        <div class="metric-sub" id="weekSub">Current week</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Unique Drivers</div>
         <div class="metric-value" id="uniqueDrivers">0</div>
-        <div class="metric-sub">Total drivers</div>
+        <div class="metric-sub" id="uniqueSub">Total drivers</div>
       </div>
     </div>
 
@@ -205,6 +233,7 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
   let allData = [];
+  let filteredData = [];
   let charts = {};
 
   // Initialize
@@ -236,7 +265,6 @@
     }
 
     try {
-      // Extract sheet ID from URL
       const sheetIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
       if (!sheetIdMatch) {
         alert('Invalid Google Sheets URL format');
@@ -269,16 +297,87 @@
 
   // Process data and update dashboard
   function processData(data) {
-    allData = data.filter(row => row["Driver ID"]); // Remove empty rows
+    allData = data.filter(row => row["Driver ID"]);
     
     if (allData.length === 0) {
       alert('No valid data to process');
       return;
     }
 
+    populateFilters();
+    applyFilter();
+  }
+
+  // Populate month and year filters
+  function populateFilters() {
+    const months = new Set();
+    const years = new Set();
+
+    allData.forEach(row => {
+      if (row["Date"]) {
+        const [year, month] = row["Date"].split('-');
+        if (year && month) {
+          years.add(year);
+          months.add(month);
+        }
+      }
+    });
+
+    // Populate year dropdown
+    const yearSelect = document.getElementById('yearFilter');
+    yearSelect.innerHTML = '<option value="">Select year...</option>';
+    Array.from(years).sort().reverse().forEach(year => {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      yearSelect.appendChild(option);
+    });
+
+    // Populate month dropdown
+    const monthSelect = document.getElementById('monthFilter');
+    monthSelect.innerHTML = '<option value="">Select month...</option>';
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    Array.from(months).sort().forEach(month => {
+      const option = document.createElement('option');
+      option.value = month;
+      option.textContent = monthNames[parseInt(month) - 1];
+      monthSelect.appendChild(option);
+    });
+
+    // Set current month/year as default
+    const now = new Date();
+    const currentYear = now.getFullYear().toString();
+    const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+    
+    document.getElementById('yearFilter').value = currentYear;
+    document.getElementById('monthFilter').value = currentMonth;
+  }
+
+  // Apply filter
+  function applyFilter() {
+    const selectedYear = document.getElementById('yearFilter').value;
+    const selectedMonth = document.getElementById('monthFilter').value;
+
+    if (!selectedYear || !selectedMonth) {
+      filteredData = allData;
+    } else {
+      filteredData = allData.filter(row => {
+        if (!row["Date"]) return false;
+        const [year, month] = row["Date"].split('-');
+        return year === selectedYear && month === selectedMonth;
+      });
+    }
+
     updateMetrics();
     updateCharts();
     updateTable();
+  }
+
+  // Reset filter
+  function resetFilter() {
+    document.getElementById('monthFilter').value = '';
+    document.getElementById('yearFilter').value = '';
+    applyFilter();
   }
 
   // Update metrics
@@ -287,9 +386,9 @@
     const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const total = allData.length;
-    const thisMonth = allData.filter(row => row["Date"]?.startsWith(currentMonth)).length;
-    const thisWeek = allData.filter(row => {
+    const total = filteredData.length;
+    const thisMonth = filteredData.filter(row => row["Date"]?.startsWith(currentMonth)).length;
+    const thisWeek = filteredData.filter(row => {
       try {
         const visitDate = new Date(row["Date"]);
         return visitDate >= weekAgo;
@@ -297,12 +396,24 @@
         return false;
       }
     }).length;
-    const uniqueDrivers = new Set(allData.map(row => row["Driver ID"])).size;
+    const uniqueDrivers = new Set(filteredData.map(row => row["Driver ID"])).size;
+
+    const selectedYear = document.getElementById('yearFilter').value;
+    const selectedMonth = document.getElementById('monthFilter').value;
+    let periodText = 'All time';
+    if (selectedYear && selectedMonth) {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      periodText = `${monthNames[parseInt(selectedMonth) - 1]} ${selectedYear}`;
+    }
 
     document.getElementById('totalVisits').textContent = total;
+    document.getElementById('totalSub').textContent = periodText;
     document.getElementById('monthVisits').textContent = thisMonth;
+    document.getElementById('monthSub').textContent = 'Current month';
     document.getElementById('weekVisits').textContent = thisWeek;
+    document.getElementById('weekSub').textContent = 'Current week';
     document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+    document.getElementById('uniqueSub').textContent = 'Total drivers';
   }
 
   // Update charts
@@ -315,7 +426,7 @@
 
   function updateHubChart() {
     const hubCounts = {};
-    allData.forEach(row => {
+    filteredData.forEach(row => {
       if (row["Hub"]) {
         hubCounts[row["Hub"]] = (hubCounts[row["Hub"]] || 0) + 1;
       }
@@ -346,7 +457,7 @@
 
   function updateReasonChart() {
     const reasonCounts = {};
-    allData.forEach(row => {
+    filteredData.forEach(row => {
       const reason = row["Reasons"] || 'Unknown';
       reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
     });
@@ -374,7 +485,7 @@
 
   function updateFeedbackChart() {
     const feedbackCounts = {};
-    allData.forEach(row => {
+    filteredData.forEach(row => {
       if (row["Feedback Type"]) {
         feedbackCounts[row["Feedback Type"]] = (feedbackCounts[row["Feedback Type"]] || 0) + 1;
       }
@@ -403,7 +514,7 @@
 
   function updateTimeChart() {
     const dateCounts = {};
-    allData.forEach(row => {
+    filteredData.forEach(row => {
       const date = row["Date"] || 'Unknown';
       dateCounts[date] = (dateCounts[date] || 0) + 1;
     });
@@ -437,7 +548,7 @@
   // Update table
   function updateTable() {
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = allData.slice(-10).reverse().map(row => `
+    tbody.innerHTML = filteredData.slice(-10).reverse().map(row => `
       <tr>
         <td><strong>${row["Driver ID"] || '-'}</strong></td>
         <td>${row["Date"] || '-'}</td>
