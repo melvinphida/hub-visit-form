@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub Visit Dashboard — Bolt Operations</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f5f3; --surface: #ffffff; --surface-alt: #f9f9f8;
+      --border: #e0dedd; --border-strong: #c8c7c4;
+      --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-muted: #9e9d99;
+      --danger: #c0392b; --accent: #1a5c8c; --accent-bg: #e8f0f5; --accent-border: #a3c4d9;
+      --radius: 8px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+
+    /* ---- Top nav ---- */
+    .top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; height: 60px; }
+    .brand-bar { display: flex; align-items: center; gap: 10px; }
+    .bolt-logo { width: 32px; height: 32px; background: #34d058; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #0a2e18; }
+    .brand-name { font-size: 15px; font-weight: 600; }
+    .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+    
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-links a.active { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+
+    /* ---- Panel ---- */
+    .panel { padding: 2rem; display: none; }
+    .panel.active { display: block; }
+
+    /* ---- Dashboard ---- */
+    .dashboard-wrap { max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 1.5rem; }
+    
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .metric-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .metric-value { font-size: 32px; font-weight: 700; color: var(--accent); }
+    .metric-sub { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
+    .chart-container { position: relative; height: 300px; }
+
+    .data-input { margin-bottom: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .data-input h2 { font-size: 18px; font-weight: 600; margin-bottom: 1rem; }
+    .input-group { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .input-field { flex: 1; min-width: 200px; }
+    .input-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .input-field input, .input-field select, .input-field textarea { 
+      font-family: var(--font); font-size: 14px; color: var(--text-primary);
+      background: var(--surface-alt); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 9px 12px; width: 100%;
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-field input:focus, .input-field select:focus, .input-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); background: var(--surface); }
+
+    .btn-primary { font-family: var(--font); font-size: 14px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); padding: 9px 22px; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: #144d78; }
+    .btn-primary:disabled { background: #7aabcc; cursor: not-allowed; }
+
+    .btn-secondary { font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 18px; cursor: pointer; transition: background 0.2s; }
+    .btn-secondary:hover { background: var(--bg); border-color: var(--border-strong); }
+
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .data-table th { background: var(--surface-alt); border: 1px solid var(--border); padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+    .data-table td { border: 1px solid var(--border); padding: 12px; font-size: 13px; }
+    .data-table tr:hover { background: var(--accent-bg); }
+
+    .tag { display: inline-block; background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state-icon { font-size: 48px; margin-bottom: 1rem; }
+
+    .success-msg { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 1rem; display: none; }
+
+    @media (max-width: 768px) {
+      .top-nav { padding: 0 1rem; }
+      .nav-links { gap: 1rem; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .input-group { flex-direction: column; }
+      .input-field { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top navigation -->
+<div class="top-nav">
+  <div class="brand-bar">
+    <div class="bolt-logo">⚡</div>
+    <span class="brand-name">Bolt</span>
+    <span class="brand-sub">Operations · Dashboard</span>
+  </div>
+  <div class="nav-links">
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="index.html">Record Visit</a>
+  </div>
+</div>
+
+<!-- Dashboard Panel -->
+<div id="panel-dashboard" class="panel active">
+  <div class="dashboard-wrap">
+    <h1>Hub Visit Analytics</h1>
+
+    <!-- Success Message -->
+    <div class="success-msg" id="successMsg">✅ Data loaded successfully!</div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="metric-card">
+        <div class="metric-label">Total Visits</div>
+        <div class="metric-value" id="totalVisits">0</div>
+        <div class="metric-sub">All time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">This Month</div>
+        <div class="metric-value" id="monthVisits">0</div>
+        <div class="metric-sub">Current month</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">This Week</div>
+        <div class="metric-value" id="weekVisits">0</div>
+        <div class="metric-sub">Current week</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Unique Drivers</div>
+        <div class="metric-value" id="uniqueDrivers">0</div>
+        <div class="metric-sub">Total drivers</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Visits by Hub</div>
+        <div class="chart-container">
+          <canvas id="hubChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Visit Reasons</div>
+        <div class="chart-container">
+          <canvas id="reasonChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Feedback Type</div>
+        <div class="chart-container">
+          <canvas id="feedbackChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Visits Over Time</div>
+        <div class="chart-container">
+          <canvas id="timeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Input Section -->
+    <div class="data-input">
+      <h2>📊 Load Data from Google Sheets</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 1rem;">Share your Google Sheet with your Bolt company domain (@bolt.com)</p>
+      <div class="input-group">
+        <div class="input-field" style="flex: 2;">
+          <label>Google Sheet URL</label>
+          <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit">
+        </div>
+        <button class="btn-primary" onclick="loadDataFromSheet()">Load Data</button>
+        <button class="btn-secondary" onclick="loadSampleData()">Load Sample</button>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="chart-card">
+      <div class="chart-title">Recent Visits</div>
+      <table class="data-table" id="dataTable">
+        <thead>
+          <tr>
+            <th>Driver ID</th>
+            <th>Date</th>
+            <th>Hub</th>
+            <th>Reasons</th>
+            <th>Feedback Type</th>
+            <th>OC Name</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted);">No data yet. Load data or add records.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+  let allData = [];
+  let charts = {};
+
+  // Initialize
+  function init() {
+    loadSampleData();
+  }
+
+  // Load sample data
+  function loadSampleData() {
+    const sampleData = [
+      { "Driver ID": "7291048", "Date": "2024-01-15", "Hub": "London", "Reasons": "App Query", "Sub Reason": "App crash", "Feedback Type": "Complaint", "Driver Feedback": "App keeps crashing", "OC Name": "John" },
+      { "Driver ID": "7291049", "Date": "2024-01-16", "Hub": "Manchester", "Reasons": "Payment Payout Query", "Sub Reason": "Cashout", "Feedback Type": "Question", "Driver Feedback": "", "OC Name": "Sarah" },
+      { "Driver ID": "7291050", "Date": "2024-01-17", "Hub": "Birmingham", "Reasons": "Document Verification", "Sub Reason": "", "Feedback Type": "", "Driver Feedback": "", "OC Name": "Mike" },
+      { "Driver ID": "7291051", "Date": "2024-01-18", "Hub": "Bristol", "Reasons": "Lead Registration", "Sub Reason": "", "Feedback Type": "Praise", "Driver Feedback": "Great service", "OC Name": "Emma" },
+      { "Driver ID": "7291052", "Date": "2024-01-19", "Hub": "London", "Reasons": "Blocked Account", "Sub Reason": "Safety", "Feedback Type": "Complaint", "Driver Feedback": "Frustrated", "OC Name": "John" },
+      { "Driver ID": "7291053", "Date": "2024-01-20", "Hub": "Nottingham", "Reasons": "Activity/Driver Score/BQS Appeal", "Sub Reason": "", "Feedback Type": "Question", "Driver Feedback": "", "OC Name": "David" },
+      { "Driver ID": "7291054", "Date": "2024-01-21", "Hub": "Manchester", "Reasons": "App Query", "Sub Reason": "Navigation", "Feedback Type": "", "Driver Feedback": "", "OC Name": "Sarah" },
+      { "Driver ID": "7291048", "Date": "2024-01-22", "Hub": "London", "Reasons": "Payment Payout Query", "Sub Reason": "Parking fee", "Feedback Type": "Suggestion", "Driver Feedback": "Better fee explanation needed", "OC Name": "John" },
+    ];
+    processData(sampleData);
+  }
+
+  // Load from Google Sheets
+  async function loadDataFromSheet() {
+    const url = document.getElementById('sheetUrl').value.trim();
+    if (!url) {
+      alert('Please enter a valid Google Sheets URL');
+      return;
+    }
+
+    try {
+      // Extract sheet ID from URL
+      const sheetIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!sheetIdMatch) {
+        alert('Invalid Google Sheets URL format');
+        return;
+      }
+      const sheetId = sheetIdMatch[1];
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+      const response = await fetch(csvUrl);
+      if (!response.ok) throw new Error('Could not fetch sheet');
+      
+      const csv = await response.text();
+      const results = Papa.parse(csv, { header: true, skipEmptyLines: true });
+      
+      if (results.data.length === 0) {
+        alert('No data found in sheet. Make sure the sheet is shared with your Bolt domain.');
+        return;
+      }
+
+      processData(results.data);
+      document.getElementById('successMsg').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('successMsg').style.display = 'none';
+      }, 3000);
+    } catch (error) {
+      alert('Error loading sheet: ' + error.message + '\n\nMake sure your Google Sheet is shared with your Bolt company domain.');
+      console.error(error);
+    }
+  }
+
+  // Process data and update dashboard
+  function processData(data) {
+    allData = data.filter(row => row["Driver ID"]); // Remove empty rows
+    
+    if (allData.length === 0) {
+      alert('No valid data to process');
+      return;
+    }
+
+    updateMetrics();
+    updateCharts();
+    updateTable();
+  }
+
+  // Update metrics
+  function updateMetrics() {
+    const now = new Date();
+    const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const total = allData.length;
+    const thisMonth = allData.filter(row => row["Date"]?.startsWith(currentMonth)).length;
+    const thisWeek = allData.filter(row => {
+      try {
+        const visitDate = new Date(row["Date"]);
+        return visitDate >= weekAgo;
+      } catch {
+        return false;
+      }
+    }).length;
+    const uniqueDrivers = new Set(allData.map(row => row["Driver ID"])).size;
+
+    document.getElementById('totalVisits').textContent = total;
+    document.getElementById('monthVisits').textContent = thisMonth;
+    document.getElementById('weekVisits').textContent = thisWeek;
+    document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+  }
+
+  // Update charts
+  function updateCharts() {
+    updateHubChart();
+    updateReasonChart();
+    updateFeedbackChart();
+    updateTimeChart();
+  }
+
+  function updateHubChart() {
+    const hubCounts = {};
+    allData.forEach(row => {
+      if (row["Hub"]) {
+        hubCounts[row["Hub"]] = (hubCounts[row["Hub"]] || 0) + 1;
+      }
+    });
+
+    const ctx = document.getElementById('hubChart').getContext('2d');
+    if (charts.hub) charts.hub.destroy();
+    charts.hub = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(hubCounts),
+        datasets: [{
+          label: 'Visits',
+          data: Object.values(hubCounts),
+          backgroundColor: '#1a5c8c',
+          borderColor: '#144d78',
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  function updateReasonChart() {
+    const reasonCounts = {};
+    allData.forEach(row => {
+      const reason = row["Reasons"] || 'Unknown';
+      reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+    });
+
+    const ctx = document.getElementById('reasonChart').getContext('2d');
+    if (charts.reason) charts.reason.destroy();
+    charts.reason = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(reasonCounts),
+        datasets: [{
+          data: Object.values(reasonCounts),
+          backgroundColor: ['#1a5c8c', '#e74c3c', '#f39c12', '#27ae60', '#9b59b6', '#3498db', '#e67e22', '#1abc9c'],
+          borderColor: '#ffffff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
+
+  function updateFeedbackChart() {
+    const feedbackCounts = {};
+    allData.forEach(row => {
+      if (row["Feedback Type"]) {
+        feedbackCounts[row["Feedback Type"]] = (feedbackCounts[row["Feedback Type"]] || 0) + 1;
+      }
+    });
+
+    const ctx = document.getElementById('feedbackChart').getContext('2d');
+    if (charts.feedback) charts.feedback.destroy();
+    charts.feedback = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(feedbackCounts),
+        datasets: [{
+          data: Object.values(feedbackCounts),
+          backgroundColor: ['#27ae60', '#f39c12', '#e74c3c', '#3498db', '#9b59b6'],
+          borderColor: '#ffffff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
+
+  function updateTimeChart() {
+    const dateCounts = {};
+    allData.forEach(row => {
+      const date = row["Date"] || 'Unknown';
+      dateCounts[date] = (dateCounts[date] || 0) + 1;
+    });
+
+    const sortedDates = Object.keys(dateCounts).sort();
+    const ctx = document.getElementById('timeChart').getContext('2d');
+    if (charts.time) charts.time.destroy();
+    charts.time = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sortedDates,
+        datasets: [{
+          label: 'Daily Visits',
+          data: sortedDates.map(d => dateCounts[d]),
+          borderColor: '#1a5c8c',
+          backgroundColor: 'rgba(26, 92, 140, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  // Update table
+  function updateTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = allData.slice(-10).reverse().map(row => `
+      <tr>
+        <td><strong>${row["Driver ID"] || '-'}</strong></td>
+        <td>${row["Date"] || '-'}</td>
+        <td><span class="tag">${row["Hub"] || '-'}</span></td>
+        <td>${row["Reasons"] || '-'}</td>
+        <td>${row["Feedback Type"] ? '<span class="tag">' + row["Feedback Type"] + '</span>' : '-'}</td>
+        <td>${row["OC Name"] || '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Initialize on load
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>
