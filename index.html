@@ -91,15 +91,7 @@
   .selected-reason-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent); border-radius: 20px; padding: 5px 12px; font-size: 13px; font-weight: 500; margin-top: 6px; }
   .selected-reason-tag button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; }
 
-  /* Sub-issue styles */
-  .sub-issue-wrap { display: none; flex-direction: column; gap: 8px; margin-top: 4px; }
-  .sub-issue-wrap.visible { display: flex; }
-  .sub-issue-grid { display: flex; gap: 8px; flex-wrap: wrap; }
-  .sub-btn { font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; cursor: pointer; transition: all 0.12s; }
-  .sub-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
-  .sub-btn.selected { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); font-weight: 600; }
-  .sub-other-wrap { display: none; margin-top: 6px; }
-  .sub-other-wrap.visible { display: block; }
+
 </style>
 </head>
 <body>
@@ -181,14 +173,8 @@
           </div>
           <span class="error-msg">Please describe and select a reason</span>
 
-          <!-- Sub-issues -->
-          <div class="sub-issue-wrap" id="subWrap">
-            <label style="margin-top:4px;">Sub-issue</label>
-            <div class="sub-issue-grid" id="subGrid"></div>
-          </div>
-
-          <input type="hidden" name="subIssue" id="subIssueVal">
-          <input type="hidden" name="reasons" id="reasonsFinal">
+          <input type="hidden" id="subIssueVal">
+          <input type="hidden" id="reasonsFinal">
         </div>
         <div class="field">
           <label>Additional notes</label>
@@ -386,9 +372,6 @@
     document.getElementById('selectedReasonTag').style.display = 'block';
 
     // If Other — show free text
-    const subWrap = document.getElementById('subWrap');
-    const subGrid = document.getElementById('subGrid');
-
     if (main === 'Other') {
       subWrap.classList.remove('visible');
       subGrid.innerHTML = '';
@@ -416,52 +399,19 @@
     const otherBox = document.getElementById('otherNoteWrap');
     if (otherBox) otherBox.style.display = 'none';
 
-    // Pre-select sub if provided
-    if (sub) {
-      document.getElementById('subIssueVal').value = sub;
-      updateReasonsFinal(main, sub);
-      // Show sub-issue buttons with pre-selected
-      const found = REASON_LIST.find(r => r.main === main);
-      if (found && found.subs.length > 0) {
-        subGrid.innerHTML = found.subs.map(s =>
-          `<button type="button" class="sub-btn${s === sub ? ' selected' : ''}" data-val="${s}" onclick="selectSub(this)">${s}</button>`
-        ).join('');
-        subWrap.classList.add('visible');
-      }
-    } else {
-      // Show sub-issues for manual selection
-      const found = REASON_LIST.find(r => r.main === main);
-      document.getElementById('subIssueVal').value = '';
-      if (found && found.subs.length > 0) {
-        subGrid.innerHTML = found.subs.map(s =>
-          `<button type="button" class="sub-btn" data-val="${s}" onclick="selectSub(this)">${s}</button>`
-        ).join('');
-        subWrap.classList.add('visible');
-      } else {
-        subWrap.classList.remove('visible');
-        subGrid.innerHTML = '';
-      }
-      updateReasonsFinal(main, '');
-    }
+    // Auto-set sub-issue silently
+    document.getElementById('subIssueVal').value = sub || '';
   }
 
   function clearSelectedReason() {
     selectedReason = null;
     document.getElementById('selectedReasonTag').style.display = 'none';
     document.getElementById('selectedReasonLabel').textContent = '';
-    document.getElementById('subWrap').classList.remove('visible');
-    document.getElementById('subGrid').innerHTML = '';
+
     document.getElementById('subIssueVal').value = '';
     document.getElementById('reasonsFinal').value = '';
     document.getElementById('reasonInput').value = '';
     document.getElementById('reasonInput').focus();
-  }
-
-  function selectSub(btn) {
-    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    document.getElementById('subIssueVal').value = btn.dataset.val;
-    updateReasonsFinal(selectedReason, btn.dataset.val);
   }
 
   function updateReasonsFinal(main, sub) {
@@ -497,13 +447,20 @@
     const btn = document.getElementById('submitBtn');
     btn.textContent = 'Saving…'; btn.disabled = true;
     const form = document.getElementById('hubForm');
+    const mainReasonVal = selectedReason || '';
+    const subReasonVal = document.getElementById('subIssueVal').value || '';
     const data = {
-      driverId: form.elements['driverId'].value, visitDate: new Date().toLocaleDateString('en-GB'),
-      hub: form.elements['hub'].value, ocName: form.elements['ocName'].value,
-      mainReason: selectedReason || '',
-      subReason:  document.getElementById('subIssueVal').value || '', reasonNotes: form.elements['reasonNotes'].value,
-      feedbackType: document.getElementById('feedbackType').value, driverFeedback: form.elements['driverFeedback'].value,
+      driverId:       form.elements['driverId'].value,
+      visitDate:      new Date().toLocaleDateString('en-GB'),
+      hub:            form.elements['hub'].value,
+      ocName:         form.elements['ocName'].value,
+      mainReason:     mainReasonVal,
+      subReason:      subReasonVal,
+      reasonNotes:    form.elements['reasonNotes'].value,
+      feedbackType:   document.getElementById('feedbackType').value,
+      driverFeedback: form.elements['driverFeedback'].value,
     };
+    console.log('Submitting data:', JSON.stringify(data));
     try {
       await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       form.style.display = 'none';
