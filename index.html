@@ -264,7 +264,7 @@
       const data = {
         driverId: driverIdVal, visitDate: new Date().toLocaleDateString('en-GB'),
         hub: hubVal, ocName: form.elements['ocName'].value || '',
-        reasons: this.dataset.val, reasonNotes: '', feedbackType: '', driverFeedback: '',
+        mainReason: this.dataset.val, subReason: '', reasonNotes: '', feedbackType: '', driverFeedback: '',
       };
       try {
         await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -311,54 +311,42 @@
     { main: 'Other', subs: [] },
   ];
 
-  let aiDebounce = null;
   let selectedReason = null;
 
   function onReasonInput(val) {
     if (selectedReason) return;
-    clearTimeout(aiDebounce);
     const box = document.getElementById('aiSuggestions');
     if (!val.trim()) { box.classList.remove('visible'); return; }
-    box.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div> Finding best match…</div>';
-    box.classList.add('visible');
-    aiDebounce = setTimeout(() => getAISuggestions(val), 500);
+    getAISuggestions(val);
   }
 
-  async function getAISuggestions(query) {
+  function getAISuggestions(query) {
     const box = document.getElementById('aiSuggestions');
-    try {
-      const reasonDetails = REASON_LIST.map(r =>
-        r.subs.length ? `${r.main} (sub-issues: ${r.subs.join(', ')})` : r.main
-      ).join('; ');
+    const q = query.toLowerCase().trim();
+    const matches = [];
 
-      const prompt = `You are helping a Bolt operations team log driver hub visit reasons. Given the user description: "${query}", suggest the top 3 best matching reasons. Each suggestion should include the main reason AND the most relevant sub-issue if applicable. Available reasons: ${reasonDetails}. Return ONLY a JSON array like: [{"main": "Main Reason", "sub": "Sub-issue or empty string", "explanation": "one-line reason why this matches"}]. No other text.`;
-
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 400,
-          messages: [{ role: 'user', content: prompt }]
-        })
+    REASON_LIST.forEach(r => {
+      const mainWords = r.main.toLowerCase().split(/[\s\/\-]+/);
+      const mainScore = mainWords.filter(w => w.includes(q) || q.includes(w)).length;
+      if (mainScore > 0 || r.main.toLowerCase().includes(q)) {
+        matches.push({ main: r.main, sub: '', explanation: 'Matches: ' + r.main, score: mainScore + (r.main.toLowerCase().includes(q) ? 2 : 0) });
+      }
+      r.subs.forEach(s => {
+        const subScore = s.toLowerCase().includes(q) || q.includes(s.toLowerCase()) ? 2 : 0;
+        if (subScore > 0) {
+          matches.push({ main: r.main, sub: s, explanation: r.main + ' — ' + s, score: subScore });
+        }
       });
+    });
 
-      const data = await res.json();
-      const text = data.content[0].text.trim();
-      const suggestions = JSON.parse(text);
+    // Sort by score, deduplicate, take top 5
+    const seen = new Set();
+    const top = matches
+      .sort((a, b) => b.score - a.score)
+      .filter(m => { const k = m.main + m.sub; if (seen.has(k)) return false; seen.add(k); return true; })
+      .slice(0, 5);
 
-      renderSuggestions(suggestions, box);
-
-    } catch (err) {
-      // Fallback: simple text match
-      const q = query.toLowerCase();
-      const matches = [];
-      REASON_LIST.forEach(r => {
-        if (r.main.toLowerCase().includes(q)) matches.push({ main: r.main, sub: '', explanation: '' });
-        r.subs.forEach(s => { if (s.toLowerCase().includes(q)) matches.push({ main: r.main, sub: s, explanation: '' }); });
-      });
-      renderSuggestions(matches.slice(0, 5), box);
-    }
+    renderSuggestions(top, box);
   }
 
   function renderSuggestions(suggestions, box) {
@@ -477,7 +465,7 @@
   }
 
   function updateReasonsFinal(main, sub) {
-    document.getElementById('reasonsFinal').value = sub ? main + ' — ' + sub : main;
+    document.getElementById('subIssueVal').value = sub || '';
   }
 
   // Close suggestions when clicking outside
@@ -512,7 +500,8 @@
     const data = {
       driverId: form.elements['driverId'].value, visitDate: new Date().toLocaleDateString('en-GB'),
       hub: form.elements['hub'].value, ocName: form.elements['ocName'].value,
-      reasons: document.getElementById('reasonsFinal').value, reasonNotes: form.elements['reasonNotes'].value,
+      mainReason: selectedReason || '',
+      subReason:  document.getElementById('subIssueVal').value || '', reasonNotes: form.elements['reasonNotes'].value,
       feedbackType: document.getElementById('feedbackType').value, driverFeedback: form.elements['driverFeedback'].value,
     };
     try {
