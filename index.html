@@ -1,11 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Driver Hub Visit — Bolt Operations</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -23,14 +22,10 @@
   .bolt-logo { width: 32px; height: 32px; background: #34d058; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #0a2e18; }
   .brand-name { font-size: 15px; font-weight: 600; }
   .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
-  .nav-tabs { display: flex; gap: 0; }
-  .nav-tab { padding: 1.1rem 1.5rem; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.12s, border-color 0.12s; }
-  .nav-tab:hover { color: var(--text-primary); }
-  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
-  /* ---- Panels ---- */
-  .panel { display: none; padding: 2rem 1rem 4rem; }
-  .panel.active { display: block; }
+
+  /* ---- Panel ---- */
+  .panel { padding: 2rem 1rem 4rem; }
 
   /* ---- Form styles ---- */
   .form-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
@@ -77,53 +72,34 @@
   .quick-close-btn { font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 20px; padding: 7px 16px; cursor: pointer; transition: all 0.12s; }
   .quick-close-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
   .quick-close-btn.selected { background: #fde68a; border-color: #f0d080; color: #7a5c0a; font-weight: 600; }
-  /* Choices.js */
-  .choices { width: 100%; }
-  .choices__inner { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; min-height: 42px; font-size: 14px; font-family: var(--font); }
-  .choices__inner:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); background: var(--surface); }
-  .choices__input { background: transparent; font-size: 14px; font-family: var(--font); color: var(--text-primary); margin: 2px 0; }
-  .choices__input::placeholder { color: var(--text-muted); }
-  .choices__list--dropdown { border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.08); font-size: 14px; font-family: var(--font); z-index: 99; }
-  .choices__list--dropdown .choices__item--selectable { padding: 9px 12px; color: var(--text-primary); }
-  .choices__list--dropdown .choices__item--selectable.is-highlighted { background: var(--accent-bg); color: var(--accent); }
-  .choices__list--multiple .choices__item { background: var(--accent); border: none; border-radius: 4px; font-size: 13px; font-family: var(--font); padding: 3px 8px; margin: 2px; }
-  .choices__button { filter: brightness(10); opacity: 0.8; border-left: 1px solid rgba(255,255,255,0.3); }
-  .choices__placeholder { color: var(--text-muted); opacity: 1; }
 
-  /* ---- Dashboard styles ---- */
-  .dash-wrap { max-width: 1100px; margin: 0 auto; }
-  .dash-header { margin-bottom: 1.5rem; }
-  .dash-header h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 4px; }
-  .dash-header p { font-size: 14px; color: var(--text-secondary); }
-  .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: flex-end; }
-  .filters .field { min-width: 160px; }
-  .filters label { font-size: 11px; }
-  .btn-filter { font-family: var(--font); font-size: 13px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); padding: 9px 18px; cursor: pointer; align-self: flex-end; }
-  .btn-filter:hover { background: #144d78; }
-  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
-  .stat-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
-  .stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -1px; }
-  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-  @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
-  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
-  .chart-card.full { grid-column: 1 / -1; }
-  .chart-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; }
-  .chart-wrap { position: relative; height: 240px; }
-  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
-  .table-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .table-card th { background: var(--surface-alt); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); }
-  .table-card td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-primary); vertical-align: top; }
-  .table-card tr:last-child td { border-bottom: none; }
-  .table-card tr:hover td { background: var(--surface-alt); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-  .badge-blue { background: var(--accent-bg); color: var(--accent); }
-  .badge-yellow { background: #fef3e2; color: #b45309; }
-  .badge-green { background: #e8f5ee; color: #1a8c4e; }
-  .badge-red { background: #fdf0ee; color: var(--danger); }
-  .loading-msg { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 14px; }
-  .dash-section-title { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
+
+
+  /* AI suggestion styles */
+  .ai-input-wrap { position: relative; }
+  .ai-suggestions { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 50; max-height: 260px; overflow-y: auto; margin-top: 4px; }
+  .ai-suggestions.visible { display: block; }
+  .ai-suggestion-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .ai-suggestion-item:last-child { border-bottom: none; }
+  .ai-suggestion-item:hover { background: var(--accent-bg); }
+  .ai-suggestion-main { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .ai-suggestion-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .ai-suggestion-badge { font-size: 11px; background: var(--accent-bg); color: var(--accent); border-radius: 4px; padding: 1px 6px; margin-left: 6px; font-weight: 500; }
+  .ai-loading { padding: 12px 14px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .ai-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .selected-reason-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent); border-radius: 20px; padding: 5px 12px; font-size: 13px; font-weight: 500; margin-top: 6px; }
+  .selected-reason-tag button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; }
+
+  /* Sub-issue styles */
+  .sub-issue-wrap { display: none; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .sub-issue-wrap.visible { display: flex; }
+  .sub-issue-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sub-btn { font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; cursor: pointer; transition: all 0.12s; }
+  .sub-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
+  .sub-btn.selected { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+  .sub-other-wrap { display: none; margin-top: 6px; }
+  .sub-other-wrap.visible { display: block; }
 </style>
 </head>
 <body>
@@ -135,10 +111,7 @@
     <span class="brand-name">Bolt</span>
     <span class="brand-sub">Operations · Hub Visit</span>
   </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchPanel('form', this)">Log visit</button>
-    <button class="nav-tab" onclick="switchPanel('dashboard', this)">Dashboard</button>
-  </div>
+
 </div>
 
 <!-- ===================== FORM PANEL ===================== -->
@@ -195,48 +168,27 @@
       <div class="card-header"><div class="section-num">2</div><span class="card-title">Visit reason</span></div>
       <div class="card-body">
         <div class="field" id="f-reasons">
-          <label>Reason(s) for visit <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:11px;">— not needed if resolve &amp; close selected above</span></label>
-          <select name="reasons" id="reasonsSelect" multiple>
-            <option value="Account Migration">Account Migration</option>
-            <option value="Activity/Driver Score/BQS Appeal">Activity / Driver Score / BQS Appeal</option>
-            <option value="App crash">App crash</option>
-            <option value="App Query">App Query</option>
-            <option value="Blocked Account">Blocked Account</option>
-            <option value="Branding Enquiry">Branding Enquiry</option>
-            <option value="Car Application">Car Application</option>
-            <option value="Cashout issue">Cashout issue</option>
-            <option value="Category Issue">Category Issue</option>
-            <option value="Cleaning fee issue">Cleaning fee issue</option>
-            <option value="Document Verification">Document Verification</option>
-            <option value="Driver Balance/Commission">Driver Balance / Commission</option>
-            <option value="Fleet Account">Fleet Account</option>
-            <option value="General Enquiry">General Enquiry</option>
-            <option value="In Person Guidance">In Person Guidance</option>
-            <option value="Invoice related">Invoice related</option>
-            <option value="Lead Registration">Lead Registration</option>
-            <option value="Legal Requirements">Legal Requirements</option>
-            <option value="Linking Adding Vehicle">Linking Adding Vehicle</option>
-            <option value="Login issues">Login issues</option>
-            <option value="Lost Item">Lost Item</option>
-            <option value="Navigation issue">Navigation issue</option>
-            <option value="Not getting orders">Not getting orders</option>
-            <option value="Parking fee">Parking fee</option>
-            <option value="Payment issue">Payment issue</option>
-            <option value="Payment Payout Query">Payment Payout Query</option>
-            <option value="Pickup point issue">Pickup point issue</option>
-            <option value="Reactivation">Reactivation</option>
-            <option value="Regulatory Mandated Hub Activation">Regulatory Mandated Hub Activation</option>
-            <option value="Rider Charged More Than Expected">Rider Charged More Than Expected</option>
-            <option value="Safety">Safety</option>
-            <option value="Safety/compliance blocks">Safety / Compliance Blocks</option>
-            <option value="Selfie Check Failure">Selfie Check Failure</option>
-            <option value="Selfie verification">Selfie Verification</option>
-            <option value="Toll fee">Toll fee</option>
-            <option value="Update Profile Details">Update Profile Details</option>
-            <option value="Upload Document">Upload Document</option>
-            <option value="Other">Other</option>
-          </select>
-          <span class="error-msg">Select at least one reason</span>
+          <label>Reason for visit <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:11px;">— not needed if resolve &amp; close selected above</span></label>
+          <div class="ai-input-wrap">
+            <input type="text" id="reasonInput" placeholder="Type to describe the issue — AI will suggest the best match…" autocomplete="off" oninput="onReasonInput(this.value)" onfocus="if(this.value) onReasonInput(this.value)">
+            <div class="ai-suggestions" id="aiSuggestions"></div>
+          </div>
+          <div id="selectedReasonTag" style="display:none;">
+            <span class="selected-reason-tag" id="selectedReasonText">
+              <span id="selectedReasonLabel"></span>
+              <button type="button" onclick="clearSelectedReason()" title="Clear">×</button>
+            </span>
+          </div>
+          <span class="error-msg">Please describe and select a reason</span>
+
+          <!-- Sub-issues -->
+          <div class="sub-issue-wrap" id="subWrap">
+            <label style="margin-top:4px;">Sub-issue</label>
+            <div class="sub-issue-grid" id="subGrid"></div>
+          </div>
+
+          <input type="hidden" name="subIssue" id="subIssueVal">
+          <input type="hidden" name="reasons" id="reasonsFinal">
         </div>
         <div class="field">
           <label>Additional notes</label>
@@ -282,103 +234,10 @@
   </div>
 </div>
 
-<!-- ===================== DASHBOARD PANEL ===================== -->
-<div id="panel-dashboard" class="panel">
-  <div class="dash-wrap">
-    <div class="dash-header">
-      <h2>Hub visit dashboard</h2>
-      <p>Live data from your Google Sheet. Use filters to explore by city and date range.</p>
-    </div>
 
-    <!-- Filters -->
-    <div class="filters">
-      <div class="field">
-        <label>Hub / City</label>
-        <select id="filterHub">
-          <option value="">All hubs</option>
-          <option>Birmingham</option>
-          <option>Bristol</option>
-          <option>London</option>
-          <option>Manchester</option>
-          <option>Nottingham</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>From date</label>
-        <input type="date" id="filterFrom">
-      </div>
-      <div class="field">
-        <label>To date</label>
-        <input type="date" id="filterTo">
-      </div>
-      <button class="btn-filter" onclick="applyFilters()">Apply</button>
-      <button class="btn-ghost" onclick="clearFilters()" style="align-self:flex-end;">Clear</button>
-    </div>
 
-    <!-- Stat cards -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Total visits</div>
-        <div class="stat-value" id="statTotal">—</div>
-        <div class="stat-sub">in selected period</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Complaints</div>
-        <div class="stat-value" id="statComplaints">—</div>
-        <div class="stat-sub">feedback type</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Praise</div>
-        <div class="stat-value" id="statPraise">—</div>
-        <div class="stat-sub">feedback type</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Quick closes</div>
-        <div class="stat-value" id="statQuick">—</div>
-        <div class="stat-sub">car app + doc upload</div>
-      </div>
-    </div>
-
-    <!-- Charts -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Visits by hub</div>
-        <div class="chart-wrap"><canvas id="chartHub"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Feedback type breakdown</div>
-        <div class="chart-wrap"><canvas id="chartFeedback"></canvas></div>
-      </div>
-      <div class="chart-card full">
-        <div class="chart-title">Top visit reasons</div>
-        <div class="chart-wrap" style="height:300px"><canvas id="chartReasons"></canvas></div>
-      </div>
-      <div class="chart-card full">
-        <div class="chart-title">Visits over time</div>
-        <div class="chart-wrap"><canvas id="chartTime"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Recent entries table -->
-    <div class="dash-section-title">Recent visits</div>
-    <div class="table-card">
-      <div id="tableBody"><div class="loading-msg">Loading data…</div></div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBANXreFyynxjLO1ddeEYK7O5T5QXA2FYN-OwaRky4SgGLtyfXt4gqyYmnu3BS8jZiFA/exec';
-
-  /* ---- Tab switching ---- */
-  function switchPanel(name, btn) {
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    if (name === 'dashboard') loadDashboard();
-  }
 
   /* ---- Show/hide quick close ---- */
   function checkQuickClose() {
@@ -425,14 +284,207 @@
     });
   });
 
-  /* ---- Choices.js ---- */
-  const reasonsChoice = new Choices('#reasonsSelect', {
-    removeItemButton: true, searchEnabled: true,
-    searchPlaceholderValue: 'Type to search…', placeholderValue: 'Select reason(s)…',
-    noResultsText: 'No match found', itemSelectText: '', shouldSort: false,
-  });
-  document.getElementById('reasonsSelect').addEventListener('change', () => {
+  /* ---- AI Reason suggestion ---- */
+  const REASON_LIST = [
+    { main: 'Regulatory Mandated Hub Activation', subs: [] },
+    { main: 'Reactivation', subs: [] },
+    { main: 'Lead Registration', subs: [] },
+    { main: 'Document Verification', subs: [] },
+    { main: 'Blocked Account', subs: ['Safety', 'Compliance', 'Verification'] },
+    { main: 'Account Migration', subs: [] },
+    { main: 'Update Profile Details', subs: [] },
+    { main: 'Selfie Check Failure', subs: [] },
+    { main: 'Legal Requirements', subs: [] },
+    { main: 'Fleet Account', subs: [] },
+    { main: 'Linking', subs: [] },
+    { main: 'Driver Balance/Commission', subs: [] },
+    { main: 'Payment Payout Query', subs: ['Cashout', 'Parking fee', 'Toll fee', 'Cleaning fee'] },
+    { main: 'App Query', subs: ['Not getting orders', 'App crash', 'Navigation', 'Pickup point'] },
+    { main: 'Lost Item', subs: [] },
+    { main: 'Rider Charged More Than Expected', subs: [] },
+    { main: 'Activity/Driver Score/BQS Appeal', subs: [] },
+    { main: 'Safety', subs: [] },
+    { main: 'In Person Guidance', subs: [] },
+    { main: 'Category Issue', subs: [] },
+    { main: 'Branding Enquiry', subs: [] },
+    { main: 'General Enquiry', subs: [] },
+    { main: 'Other', subs: [] },
+  ];
+
+  let aiDebounce = null;
+  let selectedReason = null;
+
+  function onReasonInput(val) {
+    if (selectedReason) return;
+    clearTimeout(aiDebounce);
+    const box = document.getElementById('aiSuggestions');
+    if (!val.trim()) { box.classList.remove('visible'); return; }
+    box.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div> Finding best match…</div>';
+    box.classList.add('visible');
+    aiDebounce = setTimeout(() => getAISuggestions(val), 500);
+  }
+
+  async function getAISuggestions(query) {
+    const box = document.getElementById('aiSuggestions');
+    try {
+      const reasonDetails = REASON_LIST.map(r =>
+        r.subs.length ? `${r.main} (sub-issues: ${r.subs.join(', ')})` : r.main
+      ).join('; ');
+
+      const prompt = `You are helping a Bolt operations team log driver hub visit reasons. Given the user description: "${query}", suggest the top 3 best matching reasons. Each suggestion should include the main reason AND the most relevant sub-issue if applicable. Available reasons: ${reasonDetails}. Return ONLY a JSON array like: [{"main": "Main Reason", "sub": "Sub-issue or empty string", "explanation": "one-line reason why this matches"}]. No other text.`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 400,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data.content[0].text.trim();
+      const suggestions = JSON.parse(text);
+
+      renderSuggestions(suggestions, box);
+
+    } catch (err) {
+      // Fallback: simple text match
+      const q = query.toLowerCase();
+      const matches = [];
+      REASON_LIST.forEach(r => {
+        if (r.main.toLowerCase().includes(q)) matches.push({ main: r.main, sub: '', explanation: '' });
+        r.subs.forEach(s => { if (s.toLowerCase().includes(q)) matches.push({ main: r.main, sub: s, explanation: '' }); });
+      });
+      renderSuggestions(matches.slice(0, 5), box);
+    }
+  }
+
+  function renderSuggestions(suggestions, box) {
+    const allSuggestions = [...suggestions, { main: 'Other', sub: '', explanation: 'None of the above — write a custom reason' }];
+
+    box.innerHTML = allSuggestions.map((s, i) => {
+      const label = s.sub ? s.main + ' — ' + s.sub : s.main;
+      return '<div class="ai-suggestion-item" data-idx="' + i + '">' +
+        '<div class="ai-suggestion-main">' + label + '</div>' +
+        (s.explanation ? '<div class="ai-suggestion-sub">' + s.explanation + '</div>' : '') +
+        '</div>';
+    }).join('');
+
+    // Store suggestions for click handler
+    box._suggestions = allSuggestions;
+
+    box.querySelectorAll('.ai-suggestion-item').forEach(el => {
+      el.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.idx);
+        const s = box._suggestions[idx];
+        selectReason(s.main, s.sub || '');
+      });
+    });
+
+    box.classList.add('visible');
+  }
+
+  function selectReason(main, sub) {
+    selectedReason = main;
+    document.getElementById('reasonInput').value = '';
+    document.getElementById('aiSuggestions').classList.remove('visible');
     document.getElementById('f-reasons').classList.remove('has-error');
+
+    // Show selected tag
+    const label = sub ? `${main} — ${sub}` : main;
+    document.getElementById('selectedReasonLabel').textContent = label;
+    document.getElementById('selectedReasonTag').style.display = 'block';
+
+    // If Other — show free text
+    const subWrap = document.getElementById('subWrap');
+    const subGrid = document.getElementById('subGrid');
+
+    if (main === 'Other') {
+      subWrap.classList.remove('visible');
+      subGrid.innerHTML = '';
+      // Show other note box
+      let otherBox = document.getElementById('otherNoteWrap');
+      if (!otherBox) {
+        otherBox = document.createElement('div');
+        otherBox.id = 'otherNoteWrap';
+        otherBox.style.marginTop = '8px';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.id = 'otherNote';
+        inp.placeholder = 'Please describe the reason…';
+        inp.addEventListener('input', function() { updateReasonsFinal('Other', this.value); });
+        otherBox.appendChild(inp);
+        document.getElementById('selectedReasonTag').after(otherBox);
+      }
+      otherBox.style.display = 'block';
+      document.getElementById('subIssueVal').value = '';
+      updateReasonsFinal('Other', '');
+      return;
+    }
+
+    // Hide other note if visible
+    const otherBox = document.getElementById('otherNoteWrap');
+    if (otherBox) otherBox.style.display = 'none';
+
+    // Pre-select sub if provided
+    if (sub) {
+      document.getElementById('subIssueVal').value = sub;
+      updateReasonsFinal(main, sub);
+      // Show sub-issue buttons with pre-selected
+      const found = REASON_LIST.find(r => r.main === main);
+      if (found && found.subs.length > 0) {
+        subGrid.innerHTML = found.subs.map(s =>
+          `<button type="button" class="sub-btn${s === sub ? ' selected' : ''}" data-val="${s}" onclick="selectSub(this)">${s}</button>`
+        ).join('');
+        subWrap.classList.add('visible');
+      }
+    } else {
+      // Show sub-issues for manual selection
+      const found = REASON_LIST.find(r => r.main === main);
+      document.getElementById('subIssueVal').value = '';
+      if (found && found.subs.length > 0) {
+        subGrid.innerHTML = found.subs.map(s =>
+          `<button type="button" class="sub-btn" data-val="${s}" onclick="selectSub(this)">${s}</button>`
+        ).join('');
+        subWrap.classList.add('visible');
+      } else {
+        subWrap.classList.remove('visible');
+        subGrid.innerHTML = '';
+      }
+      updateReasonsFinal(main, '');
+    }
+  }
+
+  function clearSelectedReason() {
+    selectedReason = null;
+    document.getElementById('selectedReasonTag').style.display = 'none';
+    document.getElementById('selectedReasonLabel').textContent = '';
+    document.getElementById('subWrap').classList.remove('visible');
+    document.getElementById('subGrid').innerHTML = '';
+    document.getElementById('subIssueVal').value = '';
+    document.getElementById('reasonsFinal').value = '';
+    document.getElementById('reasonInput').value = '';
+    document.getElementById('reasonInput').focus();
+  }
+
+  function selectSub(btn) {
+    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('subIssueVal').value = btn.dataset.val;
+    updateReasonsFinal(selectedReason, btn.dataset.val);
+  }
+
+  function updateReasonsFinal(main, sub) {
+    document.getElementById('reasonsFinal').value = sub ? main + ' — ' + sub : main;
+  }
+
+  // Close suggestions when clicking outside
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.ai-input-wrap')) {
+      document.getElementById('aiSuggestions').classList.remove('visible');
+    }
   });
 
   /* ---- Validate ---- */
@@ -445,7 +497,7 @@
       else wrapper.classList.remove('has-error');
     });
     const rw = document.getElementById('f-reasons');
-    if (!reasonsChoice.getValue(true).length) { rw.classList.add('has-error'); valid = false; }
+    if (!selectedReason) { rw.classList.add('has-error'); valid = false; }
     else rw.classList.remove('has-error');
     return valid;
   }
@@ -460,7 +512,7 @@
     const data = {
       driverId: form.elements['driverId'].value, visitDate: new Date().toLocaleDateString('en-GB'),
       hub: form.elements['hub'].value, ocName: form.elements['ocName'].value,
-      reasons: reasonsChoice.getValue(true).join(', '), reasonNotes: form.elements['reasonNotes'].value,
+      reasons: document.getElementById('reasonsFinal').value, reasonNotes: form.elements['reasonNotes'].value,
       feedbackType: document.getElementById('feedbackType').value, driverFeedback: form.elements['driverFeedback'].value,
     };
     try {
@@ -479,7 +531,15 @@
     document.getElementById('feedbackType').value = '';
     document.getElementById('quickCloseVal').value = '';
     document.getElementById('quickCloseBar').style.display = 'none';
-    reasonsChoice.removeActiveItems();
+    selectedReason = null;
+    document.getElementById('reasonInput').value = '';
+    document.getElementById('selectedReasonTag').style.display = 'none';
+    document.getElementById('selectedReasonLabel').textContent = '';
+    document.getElementById('subIssueVal').value = '';
+    document.getElementById('reasonsFinal').value = '';
+    document.getElementById('subWrap').classList.remove('visible');
+    document.getElementById('subGrid').innerHTML = '';
+    document.getElementById('aiSuggestions').classList.remove('visible');
     document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
     document.getElementById('submitBtn').textContent = 'Save hub visit';
     document.getElementById('submitBtn').disabled = false;
@@ -497,163 +557,7 @@
     });
   });
 
-  /* ======================================================
-     DASHBOARD
-  ====================================================== */
-  let allData = [];
-  let charts = {};
 
-  async function loadDashboard() {
-    document.getElementById('tableBody').innerHTML = '<div class="loading-msg">Loading data…</div>';
-    try {
-      const res = await fetch(SCRIPT_URL + '?action=getData');
-      const json = await res.json();
-      allData = json.data || [];
-      setDefaultDates();
-      applyFilters();
-    } catch (err) {
-      document.getElementById('tableBody').innerHTML = '<div class="loading-msg">Could not load data. Make sure the Apps Script is deployed correctly.</div>';
-    }
-  }
-
-  function setDefaultDates() {
-    const today = new Date();
-    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    document.getElementById('filterTo').valueAsDate = today;
-    document.getElementById('filterFrom').valueAsDate = firstOfMonth;
-  }
-
-  function parseDate(str) {
-    if (!str) return null;
-    const parts = str.split('/');
-    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-    return new Date(str);
-  }
-
-  function applyFilters() {
-    const hub = document.getElementById('filterHub').value;
-    const from = document.getElementById('filterFrom').value ? new Date(document.getElementById('filterFrom').value) : null;
-    const to = document.getElementById('filterTo').value ? new Date(document.getElementById('filterTo').value) : null;
-    if (to) to.setHours(23, 59, 59);
-
-    let filtered = allData.filter(row => {
-      const rowDate = parseDate(row.visitDate);
-      if (hub && row.hub !== hub) return false;
-      if (from && rowDate && rowDate < from) return false;
-      if (to && rowDate && rowDate > to) return false;
-      return true;
-    });
-
-    renderStats(filtered);
-    renderCharts(filtered);
-    renderTable(filtered);
-  }
-
-  function clearFilters() {
-    document.getElementById('filterHub').value = '';
-    setDefaultDates();
-    applyFilters();
-  }
-
-  function renderStats(data) {
-    document.getElementById('statTotal').textContent = data.length;
-    document.getElementById('statComplaints').textContent = data.filter(r => r.feedbackType === 'Complaint').length;
-    document.getElementById('statPraise').textContent = data.filter(r => r.feedbackType === 'Praise').length;
-    document.getElementById('statQuick').textContent = data.filter(r => r.reasons === 'Car Application' || r.reasons === 'Upload Document').length;
-  }
-
-  function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
-
-  function renderCharts(data) {
-    // Visits by hub
-    destroyChart('hub');
-    const hubs = ['Birmingham', 'Bristol', 'London', 'Manchester', 'Nottingham'];
-    const hubCounts = hubs.map(h => data.filter(r => r.hub === h).length);
-    charts['hub'] = new Chart(document.getElementById('chartHub'), {
-      type: 'bar',
-      data: { labels: hubs, datasets: [{ data: hubCounts, backgroundColor: '#1a5c8c', borderRadius: 6 }] },
-      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
-    });
-
-    // Feedback type
-    destroyChart('feedback');
-    const ftypes = ['Complaint', 'Suggestion', 'Praise', 'Question', 'Incident report'];
-    const ftColors = ['#c0392b', '#f59e0b', '#1a8c4e', '#1a5c8c', '#7c3aed'];
-    const ftCounts = ftypes.map(f => data.filter(r => r.feedbackType === f).length);
-    charts['feedback'] = new Chart(document.getElementById('chartFeedback'), {
-      type: 'doughnut',
-      data: { labels: ftypes, datasets: [{ data: ftCounts, backgroundColor: ftColors, borderWidth: 2 }] },
-      options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }, maintainAspectRatio: false }
-    });
-
-    // Top reasons
-    destroyChart('reasons');
-    const reasonMap = {};
-    data.forEach(row => {
-      if (!row.reasons) return;
-      row.reasons.split(',').forEach(r => {
-        const k = r.trim();
-        if (k) reasonMap[k] = (reasonMap[k] || 0) + 1;
-      });
-    });
-    const sortedReasons = Object.entries(reasonMap).sort((a, b) => b[1] - a[1]).slice(0, 12);
-    charts['reasons'] = new Chart(document.getElementById('chartReasons'), {
-      type: 'bar',
-      data: {
-        labels: sortedReasons.map(r => r[0]),
-        datasets: [{ data: sortedReasons.map(r => r[1]), backgroundColor: '#a3c4d9', borderRadius: 4 }]
-      },
-      options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
-    });
-
-    // Visits over time
-    destroyChart('time');
-    const timeMap = {};
-    data.forEach(row => {
-      const d = row.visitDate ? row.visitDate.substring(0, 10) : '';
-      if (d) timeMap[d] = (timeMap[d] || 0) + 1;
-    });
-    const timeSorted = Object.entries(timeMap).sort((a, b) => a[0].localeCompare(b[0]));
-    charts['time'] = new Chart(document.getElementById('chartTime'), {
-      type: 'line',
-      data: {
-        labels: timeSorted.map(d => d[0]),
-        datasets: [{ data: timeSorted.map(d => d[1]), borderColor: '#1a5c8c', backgroundColor: 'rgba(26,92,140,0.08)', fill: true, tension: 0.3, pointRadius: 3 }]
-      },
-      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, maintainAspectRatio: false }
-    });
-  }
-
-  function feedbackBadge(type) {
-    const map = { Complaint: 'badge-red', Praise: 'badge-green', Suggestion: 'badge-yellow', Question: 'badge-blue', 'Incident report': 'badge-red' };
-    return type ? `<span class="badge ${map[type] || 'badge-blue'}">${type}</span>` : '—';
-  }
-
-  function renderTable(data) {
-    if (!data.length) {
-      document.getElementById('tableBody').innerHTML = '<div class="loading-msg">No visits found for this filter.</div>';
-      return;
-    }
-    const recent = [...data].reverse().slice(0, 50);
-    const rows = recent.map(r => `
-      <tr>
-        <td>${r.visitDate || '—'}</td>
-        <td><strong>${r.driverId || '—'}</strong></td>
-        <td>${r.hub || '—'}</td>
-        <td>${r.ocName || '—'}</td>
-        <td style="max-width:200px">${r.reasons || '—'}</td>
-        <td>${feedbackBadge(r.feedbackType)}</td>
-        <td style="max-width:180px;color:var(--text-secondary)">${r.driverFeedback || '—'}</td>
-      </tr>`).join('');
-
-    document.getElementById('tableBody').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Date</th><th>Driver ID</th><th>Hub</th><th>OC</th><th>Reasons</th><th>Feedback</th><th>Notes</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
-  }
 </script>
 </body>
 </html>
