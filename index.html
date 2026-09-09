@@ -37,6 +37,11 @@
   .brand-name { font-size: 15px; font-weight: 600; }
   .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
 
+  .nav-links { display: flex; gap: 2rem; align-items: center; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; padding: 4px 0; border-bottom: 2px solid transparent; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
   .nav-controls { display: flex; gap: 1.5rem; align-items: center; }
   .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 14px; color: var(--text-secondary); transition: background 0.2s, border-color 0.2s; }
   .theme-toggle:hover { background: var(--bg); border-color: var(--border-strong); }
@@ -117,6 +122,10 @@
     <div class="bolt-logo">⚡</div>
     <span class="brand-name">Bolt</span>
     <span class="brand-sub">Operations · Hub Visit</span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Record Visit</a>
+    <a href="dashboard.html">Dashboard</a>
   </div>
   <div class="nav-controls">
     <div class="theme-toggle" onclick="toggleTheme()">
