@@ -1,442 +1,1010 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Hub Visit Dashboard — Bolt Operations</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #f5f5f3; --surface: #ffffff; --surface-alt: #f9f9f8;
-      --border: #e0dedd; --border-strong: #c8c7c4;
-      --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-muted: #9e9d99;
-      --danger: #c0392b; --accent: #1a5c8c; --accent-bg: #e8f0f5; --accent-border: #a3c4d9;
-      --radius: 8px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f8fafc;--surface:#fff;--border:#e2e8f0;--border2:#cbd5e1;
+      --text:#0f172a;--muted:#64748b;--subtle:#94a3b8;
+      --accent:#0f172a;--accent-fg:#fff;
+      --green:#16a34a;--green-lt:#dcfce7;--green-md:#86efac;
+      --blue:#2563eb;--blue-lt:#dbeafe;--blue-md:#93c5fd;
+      --amber:#d97706;--amber-lt:#fef3c7;--amber-md:#fcd34d;
+      --red:#dc2626;--red-lt:#fee2e2;--red-md:#fca5a5;
+      --purple:#7c3aed;--purple-lt:#ede9fe;
+      --teal:#0891b2;--teal-lt:#cffafe;
+      --bolt:#34d186;--bolt-lt:#f0fdf4;
+      --r:10px;--rsm:6px;
+      --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+      --shmd:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -2px rgba(0,0,0,.05);
     }
-    :root.dark-mode {
-      --bg: #1a1a1a; --surface: #2a2a2a; --surface-alt: #333333;
-      --border: #444444; --border-strong: #555555;
-      --text-primary: #e8e8e8; --text-secondary: #b8b8b8; --text-muted: #808080;
-      --accent-bg: #1a3a4a; --accent-border: #2a5a7a;
-    }
-    body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+    body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+    .layout{display:flex;min-height:100vh}
 
-    .top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; height: 60px; transition: background 0.2s, border-color 0.2s; }
-    .brand-bar { display: flex; align-items: center; gap: 10px; }
-    .bolt-logo { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-    .brand-name { font-size: 15px; font-weight: 600; }
-    .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
-    .nav-links { display: flex; gap: 2rem; align-items: center; }
-    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; padding: 4px 0; border-bottom: 2px solid transparent; }
-    .nav-links a:hover { color: var(--accent); }
-    .nav-links a.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .nav-controls { display: flex; gap: 1.5rem; align-items: center; }
-    .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 14px; color: var(--text-secondary); transition: background 0.2s, border-color 0.2s; }
-    .theme-toggle:hover { background: var(--bg); border-color: var(--border-strong); }
-    .theme-toggle span { font-size: 18px; }
+    /* Sidebar */
+    .sb{width:248px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;overflow-y:auto}
+    .sb-brand{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+    .sb-brand img{width:88px;height:auto;display:block}
+    .sb-brand-sub{font-size:11px;color:var(--muted);margin-top:5px;font-weight:500}
+    .sb-sec{padding:12px 8px 4px}
+    .sb-lbl{font-size:10px;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:.08em;padding:0 8px;margin-bottom:2px}
+    .sb-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--rsm);color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left}
+    .sb-item:hover,.sb-item.active{background:#f1f5f9;color:var(--text)}
+    .sb-item.active{font-weight:600}
+    .sb-item .ico{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+    .sb-sep{border:none;border-top:1px solid var(--border);margin:6px 8px}
+    .sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border)}
+    .sb-sync{font-size:11px;color:var(--subtle);margin-bottom:8px;padding:0 4px;line-height:1.4}
 
-    .panel { padding: 2rem; }
-    .dashboard-wrap { max-width: 1400px; margin: 0 auto; }
-    h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 1.5rem; }
+    /* Source badges in sidebar */
+    .src-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;margin-bottom:3px}
+    .src-live{background:var(--green-lt);color:var(--green)}
+    .src-new{background:var(--blue-lt);color:var(--blue)}
 
-    /* Loading / error */
-    .status-bar { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; margin-bottom: 1.5rem; font-size: 13px; color: var(--text-secondary); }
-    .status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: #27ae60; flex-shrink: 0; }
-    .status-bar .dot.loading { background: #f39c12; animation: pulse 1s infinite; }
-    .status-bar .dot.error { background: #e74c3c; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-    .btn-refresh { margin-left: auto; font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--accent); background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 6px; padding: 5px 14px; cursor: pointer; transition: background 0.15s; }
-    .btn-refresh:hover { background: #d0e4f0; }
+    /* Main */
+    .main{margin-left:248px;flex:1;display:flex;flex-direction:column}
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+    .tb-title{font-size:15px;font-weight:700}
+    .tb-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+    .tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .content{padding:24px 28px 48px}
 
-    .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
-    .filter-group { display: flex; flex-direction: column; gap: 6px; }
-    .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
-    .filter-group select { font-family: var(--font); font-size: 14px; color: var(--text-primary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; outline: none; transition: border-color 0.15s; cursor: pointer; }
-    .filter-group select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); }
-    .btn-reset { font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 18px; cursor: pointer; transition: background 0.2s; }
-    .btn-reset:hover { background: var(--bg); border-color: var(--border-strong); }
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rsm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .12s;font-family:inherit;text-decoration:none}
+    .btn-dark{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+    .btn-dark:hover{opacity:.85} .btn-dark:disabled{opacity:.45;cursor:not-allowed}
+    .btn-outline{background:var(--surface);color:var(--text);border-color:var(--border2)}
+    .btn-outline:hover{background:#f8fafc}
+    .btn-ghost{background:none;color:var(--muted);border-color:transparent}
+    .btn-ghost:hover{background:#f1f5f9;color:var(--text)}
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-    .metric-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
-    .metric-value { font-size: 32px; font-weight: 700; color: var(--accent); }
-    .metric-sub { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+    /* Inputs */
+    .inp{background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:var(--rsm);padding:7px 11px;font-size:13px;outline:none;font-family:inherit;box-shadow:var(--sh);transition:border-color .12s}
+    .inp:focus{border-color:#94a3b8;box-shadow:0 0 0 3px rgba(15,23,42,.06)}
 
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-    .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
-    .chart-container { position: relative; height: 300px; }
+    /* Status */
+    #status{display:none;border-radius:var(--rsm);padding:11px 16px;margin-bottom:20px;font-size:13px;border:1px solid}
+    #status.loading{background:#f8fafc;border-color:var(--border);color:var(--muted)}
+    #status.error{background:var(--red-lt);border-color:var(--red-md);color:var(--red)}
+    #status.warning{background:var(--amber-lt);border-color:var(--amber-md);color:var(--amber)}
 
-    .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    .data-table th { background: var(--surface-alt); border: 1px solid var(--border); padding: 12px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
-    .data-table td { border: 1px solid var(--border); padding: 12px; font-size: 13px; }
-    .data-table tr:hover { background: var(--accent-bg); }
-    .tag { display: inline-block; background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+    /* KPI grid */
+    .kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:20px}
+    @media(max-width:1300px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:800px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:box-shadow .15s}
+    .kpi:hover{box-shadow:var(--shmd)}
+    .kpi-accent{border-top:3px solid var(--bolt);background:linear-gradient(160deg,var(--bolt-lt) 0%,#fff 65%)}
+    .kpi-green{border-top:3px solid var(--green)}
+    .kpi-red{border-top:3px solid var(--red)}
+    .kpi-blue{border-top:3px solid var(--blue)}
+    .kpi-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+    .kpi-val{font-size:24px;font-weight:800;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+    .kpi-sub{font-size:11px;color:var(--subtle);margin-top:4px}
+    .kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;margin-top:5px}
+    .bg-green{background:var(--green-lt);color:var(--green)}
+    .bg-blue{background:var(--blue-lt);color:var(--blue)}
+    .bg-amber{background:var(--amber-lt);color:var(--amber)}
+    .bg-red{background:var(--red-lt);color:var(--red)}
+    .bg-bolt{background:var(--bolt-lt);color:#15803d}
+    .kpi-icon{position:absolute;top:12px;right:12px;font-size:16px;opacity:.4}
 
-    @media (max-width: 768px) {
-      .top-nav { padding: 0 1rem; }
-      .nav-links { gap: 1rem; }
-      .charts-grid { grid-template-columns: 1fr; }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .filter-section { flex-direction: column; }
-      .filter-group { width: 100%; }
-    }
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+    .card-hd{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+    .card-title{font-size:13.5px;font-weight:700;color:var(--text)}
+    .card-desc{font-size:11.5px;color:var(--muted);margin-top:2px}
+    .card-body{padding:18px}
+    .cw{position:relative;height:220px}
+    .cw-sm{height:170px}
+    .cw-tall{height:250px}
+
+    /* Grids */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .g3{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+    .g3r{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px}
+    .g31{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+    @media(max-width:1000px){.g2,.g3,.g3r,.g31,.g4{grid-template-columns:1fr}}
+    .mb14{margin-bottom:14px}
+
+    /* Progress bars */
+    .prog-bar{background:#f1f5f9;border-radius:99px;height:6px;overflow:hidden;margin-top:5px}
+    .prog-fill{height:100%;border-radius:99px;transition:width .5s ease}
+
+    /* Table */
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    thead th{padding:9px 13px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);background:#f8fafc;border-bottom:1px solid var(--border);white-space:nowrap}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:#f8fafc}
+    tbody tr.hvd-row{background:#f0fdf4}
+    tbody tr.hvd-row:hover{background:#dcfce7}
+    tbody tr.hist-row{background:#eff6ff}
+    tbody tr.hist-row:hover{background:#dbeafe}
+    td{padding:9px 13px;vertical-align:middle}
+    .td-id{font-weight:700;font-family:'Courier New',monospace;font-size:11.5px}
+    .td-dim{color:var(--muted)}
+
+    /* Pills */
+    .pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10.5px;font-weight:600;white-space:nowrap}
+    .p-hvd{background:#dcfce7;color:#15803d;border:1px solid var(--green-md)}
+    .p-hist{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-md)}
+    .p-nohvd{background:#f1f5f9;color:var(--muted);border:1px solid var(--border)}
+    .p-yes{background:var(--green-lt);color:var(--green);border:1px solid var(--green-md)}
+    .p-no{background:var(--red-lt);color:var(--red);border:1px solid var(--red-md)}
+    .p-complaint{background:var(--red-lt);color:var(--red);border:1px solid var(--red-md)}
+    .p-suggestion{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-md)}
+    .p-praise{background:var(--green-lt);color:var(--green);border:1px solid var(--green-md)}
+    .p-question{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-md)}
+    .p-incident{background:var(--purple-lt);color:var(--purple);border:1px solid #c4b5fd}
+    .p-default{background:#f1f5f9;color:var(--muted);border:1px solid var(--border)}
+
+    /* Source tag */
+    .src-tag{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em}
+    .src-live-tag{background:var(--green-lt);color:var(--green)}
+    .src-new-tag{background:var(--blue-lt);color:var(--blue)}
+
+    .tbl-footer{padding:10px 13px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--border);background:#f8fafc}
+    .empty-row td{text-align:center;color:var(--muted);padding:48px}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+    /* Section divider */
+    .section-hd{display:flex;align-items:center;gap:10px;margin:24px 0 14px}
+    .section-hd-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+    .section-hd-line{flex:1;border-top:1px solid var(--border)}
+
+    /* Filterbar */
+    .filterbar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
   </style>
 </head>
 <body>
+<div class="layout">
 
-<div class="top-nav">
-  <div class="brand-bar">
-    <div class="bolt-logo">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#4a8c5c"/>
-        <circle cx="16" cy="13" r="5" fill="white"/>
-        <circle cx="16" cy="13" r="2" fill="#4a8c5c"/>
-        <circle cx="16" cy="22" r="2" fill="white"/>
-      </svg>
-    </div>
-    <span class="brand-name">Bolt</span>
-    <span class="brand-sub">Operations · Dashboard</span>
+<!-- Sidebar -->
+<aside class="sb">
+  <div class="sb-brand">
+    <img src="data:image/png;base64,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" alt="Bolt"/>
+    <div class="sb-brand-sub">Operations · Hub Visit</div>
   </div>
-  <div class="nav-links">
-    <a href="index.html">Record Visit</a>
-    <a href="dashboard.html" class="active">Dashboard</a>
+
+  <div class="sb-sec">
+    <div class="sb-lbl">Analytics</div>
+    <button class="sb-item active" id="sb-dashboard" onclick="switchTab('dashboard')"><span class="ico">📊</span>Dashboard</button>
+    <a class="sb-item" href="index.html"><span class="ico">➕</span>Record Visit</a>
   </div>
-  <div class="nav-controls">
-    <div class="theme-toggle" onclick="toggleTheme()">
-      <span id="themeIcon">🌙</span>
-      <span id="themeLabel">Dark</span>
+
+  <hr class="sb-sep"/>
+
+  <div class="sb-sec">
+    <div class="sb-lbl">Jump to</div>
+    <button class="sb-item" onclick="scrollTo(0,0)"><span class="ico">🏠</span>Overview</button>
+    <button class="sb-item" onclick="jmp('hvd-section')"><span class="ico">⭐</span>HVD Analysis</button>
+    <button class="sb-item" onclick="jmp('hub-section')"><span class="ico">📍</span>By Hub</button>
+    <button class="sb-item" onclick="switchTab('visitlog')"><span class="ico">📋</span>Visit Log</button>
+  </div>
+
+  <hr class="sb-sep"/>
+
+  <div class="sb-sec">
+    <div class="sb-lbl">Data sources</div>
+    <div style="padding:6px 8px">
+      <div class="src-badge src-live">● Live sheet</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Daily hub visit log</div>
+      <div class="src-badge src-new">● Form sheet</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">New form submissions</div>
     </div>
   </div>
-</div>
 
-<div class="panel">
-  <div class="dashboard-wrap">
-    <h1>Hub Visit Analytics</h1>
+  <div class="sb-footer">
+    <div class="sb-sync" id="sync-label">Not synced</div>
+    <button class="btn btn-outline" style="width:100%;justify-content:center" id="refresh-btn" onclick="loadData(true)">↻ Refresh</button>
+  </div>
+</aside>
 
-    <!-- Status bar -->
-    <div class="status-bar" id="statusBar">
-      <div class="dot loading" id="statusDot"></div>
-      <span id="statusText">Loading data from Google Sheet…</span>
-      <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="tb-title">Hub Visit Analytics</div>
+      <div class="tb-sub" id="tb-sub">Loading data sources…</div>
+    </div>
+    <div class="tb-right">
+      <select class="inp" id="f-month" onchange="applyFilters()" style="min-width:120px"><option value="">All months</option></select>
+      <select class="inp" id="f-hub" onchange="applyFilters()" style="min-width:110px"><option value="">All hubs</option></select>
+      <select class="inp" id="f-hvd" onchange="applyFilters()" style="min-width:130px">
+        <option value="">All drivers</option>
+        <option value="HVD">⭐ HVD only</option>
+        <option value="Historical">📋 Historical only</option>
+      </select>
+      <select class="inp" id="f-resolved" onchange="applyFilters()" style="min-width:120px">
+        <option value="">All outcomes</option>
+        <option value="Yes">✅ Resolved</option>
+        <option value="No">❌ Unresolved</option>
+      </select>
+      <select class="inp" id="f-oc" onchange="applyFilters()" style="min-width:110px"><option value="">All OCs</option></select>
+      <button class="btn btn-ghost" id="clear-btn" onclick="clearFilters()" style="display:none">✕ Clear</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="status"></div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('visitlog')">📋 Visit Log</button>
     </div>
 
-    <!-- Filters -->
-    <div class="filter-section">
-      <div class="filter-group">
-        <label>Month</label>
-        <select id="monthFilter" onchange="applyFilter()">
-          <option value="">All months</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Year</label>
-        <select id="yearFilter" onchange="applyFilter()">
-          <option value="">All years</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Hub</label>
-        <select id="hubFilter" onchange="applyFilter()">
-          <option value="">All hubs</option>
-        </select>
-      </div>
-      <button class="btn-reset" onclick="resetFilter()">Reset</button>
+    <!-- Dashboard tab -->
+    <div id="tab-dashboard" class="tab-pane active">
+
+    <div class="filterbar">
+      <input class="inp" style="flex:1;min-width:220px" type="text" id="search" placeholder="🔍  Search driver ID, OC name, reason, feedback…" oninput="applyFilters()" />
     </div>
 
-    <!-- Metrics -->
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-label">Total Visits</div>
-        <div class="metric-value" id="totalVisits">—</div>
-        <div class="metric-sub" id="totalSub">All time</div>
+    <!-- KPI strip -->
+    <div class="kpi-grid">
+      <div class="kpi kpi-blue">
+        <div class="kpi-icon">📍</div>
+        <div class="kpi-label">Total Visits</div>
+        <div class="kpi-val" id="k-total">—</div>
+        <div class="kpi-sub">merged sources</div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">This Month</div>
-        <div class="metric-value" id="monthVisits">—</div>
-        <div class="metric-sub">Current month</div>
+      <div class="kpi">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-label">This Month</div>
+        <div class="kpi-val" id="k-month">—</div>
+        <div class="kpi-sub" id="k-month-lbl">—</div>
+        <div class="kpi-badge bg-blue" id="k-month-badge" style="display:none"></div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">This Week</div>
-        <div class="metric-value" id="weekVisits">—</div>
-        <div class="metric-sub">Last 7 days</div>
+      <div class="kpi">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-label">Last 7 Days</div>
+        <div class="kpi-val" id="k-week">—</div>
+        <div class="kpi-sub">rolling week</div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">Unique Drivers</div>
-        <div class="metric-value" id="uniqueDrivers">—</div>
-        <div class="metric-sub">Total drivers</div>
+      <div class="kpi">
+        <div class="kpi-icon">🧑‍✈️</div>
+        <div class="kpi-label">Unique Drivers</div>
+        <div class="kpi-val" id="k-drivers">—</div>
+        <div class="kpi-sub">distinct IDs</div>
+      </div>
+      <div class="kpi kpi-accent">
+        <div class="kpi-icon">⭐</div>
+        <div class="kpi-label">HVD Visits</div>
+        <div class="kpi-val" id="k-hvd">—</div>
+        <div class="kpi-sub">high value drivers</div>
+        <div class="kpi-badge bg-bolt" id="k-hvd-pct" style="display:none"></div>
+      </div>
+      <div class="kpi kpi-green">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-label">Resolved</div>
+        <div class="kpi-val" id="k-resolved">—</div>
+        <div class="kpi-sub">issues resolved</div>
+        <div class="kpi-badge bg-green" id="k-resolved-pct" style="display:none"></div>
+      </div>
+      <div class="kpi kpi-red">
+        <div class="kpi-icon">❌</div>
+        <div class="kpi-label">Unresolved</div>
+        <div class="kpi-val" id="k-unresolved">—</div>
+        <div class="kpi-sub">pending resolution</div>
+        <div class="kpi-badge bg-red" id="k-unresolved-pct" style="display:none"></div>
       </div>
     </div>
 
-    <!-- Charts -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-title">Visits by Hub</div>
-        <div class="chart-container"><canvas id="hubChart"></canvas></div>
+    <!-- Row 1: Trend + HVD split -->
+    <div class="g3 mb14">
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">Visits Over Time</div><div class="card-desc">Weekly — HVD vs Historical stacked</div></div></div>
+        <div class="card-body"><div class="cw-tall"><canvas id="c-time"></canvas></div></div>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Visit Reasons</div>
-        <div class="chart-container"><canvas id="reasonChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Feedback Type</div>
-        <div class="chart-container"><canvas id="feedbackChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Visits Over Time</div>
-        <div class="chart-container"><canvas id="timeChart"></canvas></div>
+      <div class="card" id="hvd-section">
+        <div class="card-hd"><div><div class="card-title">HVD vs Historical</div><div class="card-desc">Visit split by driver type</div></div></div>
+        <div class="card-body">
+          <div class="cw-sm"><canvas id="c-hvd"></canvas></div>
+          <div style="margin-top:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:#16a34a;border-radius:2px;display:inline-block"></span>HVD</span>
+              <span id="hvd-pct-lbl" style="font-weight:700;color:var(--green)">—</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" id="hvd-prog" style="background:var(--green);width:0%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin:10px 0 4px">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:#2563eb;border-radius:2px;display:inline-block"></span>Historical</span>
+              <span id="hist-pct-lbl" style="font-weight:700;color:var(--blue)">—</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" id="hist-prog" style="background:var(--blue);width:0%"></div></div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Row 2: Resolution + Freebies + OC -->
+    <div class="section-hd" id="resolution-section">
+      <div class="section-hd-title">Resolution & Engagement</div>
+      <div class="section-hd-line"></div>
+    </div>
+    <div class="g2 mb14">
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">Issue Resolution Rate</div><div class="card-desc">Resolved vs unresolved visits</div></div></div>
+        <div class="card-body"><div class="cw"><canvas id="c-resolved"></canvas></div></div>
+      </div>
+
+
+    </div>
+
+    <!-- Row 3: Hub + Reasons + Feedback -->
+    <div class="section-hd" id="hub-section">
+      <div class="section-hd-title">Visit Breakdown</div>
+      <div class="section-hd-line"></div>
+    </div>
+    <div class="g31 mb14">
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">Visits by Hub</div><div class="card-desc">Visit share by city</div></div></div>
+        <div class="card-body"><div class="cw"><canvas id="c-hub"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">Top Visit Reasons</div><div class="card-desc">Word cloud — sized by frequency</div></div></div>
+        <div class="card-body" id="wc-container" style="min-height:220px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;padding:20px"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">Feedback Type</div><div class="card-desc">Category breakdown</div></div></div>
+        <div class="card-body" id="fb-bars" style="display:flex;flex-direction:column;gap:10px;padding:16px 18px"></div>
+      </div>
+    </div>
+
+    <!-- Row 4: HVD by hub -->
+    <div class="mb14">
+      <div class="card">
+        <div class="card-hd"><div><div class="card-title">HVD by Hub</div><div class="card-desc">HVD vs Historical per city — stacked</div></div></div>
+        <div class="card-body"><div class="cw"><canvas id="c-hvd-hub"></canvas></div></div>
+      </div></div>
 
     <!-- Table -->
-    <div class="chart-card">
-      <div class="chart-title">Recent Visits</div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Driver ID</th>
-            <th>Date</th>
-            <th>Hub</th>
-            <th>Reason</th>
-            <th>Feedback Type</th>
-            <th>OC Name</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</td></tr>
-        </tbody>
-      </table>
+    <div class="section-hd" id="tbl-section" style="display:none">
+      <div class="section-hd-title">Visit Log</div>
+      <div class="section-hd-line"></div>
     </div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="card-title" id="tbl-title">All visits</div><div class="card-desc">Up to 150 records</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Source</th><th>Driver ID</th><th>Type</th><th>Date</th><th>OC Name</th>
+              <th>Hub</th><th>Reason</th><th>Resolved?</th><th>If No</th>
+              <th>Feedback / Notes</th><th>2nd Check</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body"><tr class="empty-row"><td colspan="12">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="tbl-footer" id="tbl-footer" style="display:none"></div>
+    </div>
+    </div><!-- /tab-visitlog -->
+
   </div>
+</div>
 </div>
 
 <script>
-  // ── CONFIG ── paste your deployed /exec URL here
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBANXreFyynxjLO1ddeEYK7O5T5QXA2FYN-OwaRky4SgGLtyfXt4gqyYmnu3BS8jZiFA/exec';
-  const AUTO_REFRESH_MS = 60000; // refresh every 60 seconds
+// ── Config ───────────────────────────────────────────────────────────────────
+const LIVE_SHEET_ID = '1g5EvBdrBIS7JOSveNSmmLXC6LsWL8QHTygY7n8UP8XQ'; // Live daily sheet
+const FORM_SHEET_ID = '1LoFA87j6UD06C6GP7KTyEOoSAS2K6S9w0QYEJWw4o3k'; // Form submissions
+const API = 'https://api.anthropic.com/v1/messages';
+const DRIVE_MCP = 'https://drivemcp.googleapis.com/mcp/v1';
+const CACHE_KEY = 'hvd_dashboard_v1';
+// No TTL — cache persists until user clicks Refresh
 
-  let allData = [];
-  let filteredData = [];
-  let charts = {};
 
-  // ── Theme ──
-  function initTheme() {
-    const saved = localStorage.getItem('theme') || 'light';
-    if (saved === 'dark') {
-      document.documentElement.classList.add('dark-mode');
-      document.getElementById('themeIcon').textContent = '☀️';
-      document.getElementById('themeLabel').textContent = 'Light';
+let ALL=[], FILT=[], CH={};
+
+const jmp = id => document.getElementById(id)?.scrollIntoView({behavior:'smooth'});
+const el  = id => document.getElementById(id);
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function pd(s){
+  if(!s) return null;
+  if(s.toLowerCase()==='today') return new Date();
+  // "Tuesday, August 25, 2026" format
+  const parsed = new Date(s);
+  if(!isNaN(parsed)) return parsed;
+  // DD/MM/YYYY
+  const p=s.split('/');
+  if(p.length===3) return new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`);
+  return null;
+}
+function fd(d){ return d?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'; }
+function mk(d){ return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:''; }
+
+// ── Pills ────────────────────────────────────────────────────────────────────
+function fbPill(t){
+  if(!t) return '—';
+  const m={'Complaint':'p-complaint','Suggestion':'p-suggestion','Praise':'p-praise','Question':'p-question','Incident report':'p-incident'};
+  return `<span class="pill ${m[t]||'p-default'}">${t}</span>`;
+}
+function effectiveResolved(r){
+  // If original resolved is No but 2nd check is Yes, treat as resolved
+  if(r.resolved === 'Yes') return 'Yes';
+  if(r.secondCheck === 'Yes') return 'Yes';
+  if(r.resolved === 'No' && r.secondCheck !== 'Yes') return 'No';
+  return r.resolved || '';
+}
+function resPill(v){
+  if(!v) return '—';
+  return `<span class="pill ${v==='Yes'?'p-yes':'p-no'}">${v==='Yes'?'✅ Yes':'❌ No'}</span>`;
+}
+function hvdPill(v){
+  if(!v) return '—';
+  return `<span class="pill ${v==='HVD'?'p-hvd':v==='Historical'?'p-hist':'p-nohvd'}">${v==='HVD'?'⭐ HVD':v==='Historical'?'📋 Historical':v}</span>`;
+}
+
+function showStatus(msg,type){
+  // Only show error/warning in banner, not loading messages
+  const e=el('status');
+  if(type==='error'||type==='warning'){
+    e.style.display='block'; e.className=type; e.textContent=msg;
+  }
+  // Update sidebar sync label for loading state
+  if(type==='loading') el('sync-label').textContent=msg;
+}
+function clearStatus(){ el('status').style.display='none'; }
+
+// ── Fetch one sheet via Claude API + Drive MCP ───────────────────────────────
+async function fetchSheet(sheetId, systemPrompt, label){
+  const res = await fetch(API, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6', max_tokens:8000,
+      system: systemPrompt,
+      messages:[{role:'user', content:`Read file ${sheetId} and output ONLY the JSON array starting with [`}],
+      mcp_servers:[{type:'url', url:DRIVE_MCP, name:'google-drive'}],
+    }),
+  });
+  if(!res.ok) throw new Error(`${label} API error ${res.status}`);
+  const data = await res.json();
+  const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  // Try to extract JSON array - handle partial/truncated responses
+  let match = text.match(/\[[\s\S]*\]/);
+  if(!match) {
+    // Try to find start of array and complete it
+    const arrStart = text.indexOf('[');
+    if(arrStart === -1) throw new Error(`${label}: No JSON array. Got: ${text.slice(0,150)}`);
+    // Find last complete object by looking for last }]  or },
+    let partial = text.slice(arrStart);
+    const lastComplete = Math.max(partial.lastIndexOf('},'), partial.lastIndexOf('}]'));
+    if(lastComplete > 0) {
+      partial = partial.slice(0, lastComplete + 1) + ']';
+      match = [partial];
+    } else {
+      throw new Error(`${label}: Could not parse response. Got: ${text.slice(0,150)}`);
     }
   }
-  function toggleTheme() {
-    const isDark = document.documentElement.classList.toggle('dark-mode');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
-    document.getElementById('themeLabel').textContent = isDark ? 'Light' : 'Dark';
-  }
-
-  // ── Status bar ──
-  function setStatus(state, text) {
-    const dot = document.getElementById('statusDot');
-    const msg = document.getElementById('statusText');
-    dot.className = 'dot ' + (state === 'ok' ? '' : state);
-    msg.textContent = text;
-  }
-
-  // ── Load data from Apps Script ──
-  async function loadData() {
-    setStatus('loading', 'Loading data from Google Sheet…');
-    try {
-      const res = await fetch(SCRIPT_URL + '?action=getData');
-      const json = await res.json();
-      if (json.status !== 'ok') throw new Error(json.message || 'Unknown error');
-
-      // Map sheet rows to dashboard keys
-      allData = json.data.filter(r => r.driverId).map(r => ({
-        "Driver ID":     r.driverId,
-        "Date":          normaliseDate(r.visitDate),
-        "Hub":           r.hub,
-        "Reasons":       r.mainReason,
-        "Sub Reason":    r.subReason,
-        "Reason Notes":  r.reasonNotes,
-        "Feedback Type": r.feedbackType,
-        "Driver Feedback": r.driverFeedback,
-        "OC Name":       r.ocName,
-      }));
-
-      populateFilters();
-      applyFilter();
-      const now = new Date().toLocaleTimeString();
-      setStatus('ok', `Live data · ${allData.length} records · Last updated ${now}`);
-    } catch (err) {
-      setStatus('error', 'Could not load data: ' + err.message + ' — check the Script URL and deployment settings');
-      console.error(err);
+  try {
+    return JSON.parse(match[0]);
+  } catch(e) {
+    // Try to recover truncated JSON
+    let s = match[0];
+    const lastBrace = s.lastIndexOf('}');
+    if(lastBrace > 0) {
+      s = s.slice(0, lastBrace+1) + ']';
+      return JSON.parse(s);
     }
+    throw new Error(`${label}: JSON parse failed: ${e.message}`);
   }
+}
 
-  // Handle both DD/MM/YYYY and YYYY-MM-DD
-  function normaliseDate(d) {
-    if (!d) return '';
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
-      const [dd, mm, yyyy] = d.split('/');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    return d;
-  }
+// ── Load both sheets and merge ───────────────────────────────────────────────
+async function loadData(forceRefresh=false){
+  const btn=el('refresh-btn');
+  clearStatus();
+  // Migrate old cache keys
+  ['hvd_cache','hvd_dashboard_cache'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
 
-  // ── Filters ──
-  function populateFilters() {
-    const months = new Set();
-    const years  = new Set();
-    const hubs   = new Set();
-
-    allData.forEach(row => {
-      if (row["Date"]) {
-        const [y, m] = row["Date"].split('-');
-        if (y) years.add(y);
-        if (m) months.add(m);
+  if(!forceRefresh){
+    try{
+      const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+      if(c&&c.data&&c.data.length>0){
+        ALL=c.data;
+        const age = Date.now()-c.ts;
+        const ageStr = age<60000 ? `${Math.round(age/1000)}s ago`
+          : age<3600000 ? `${Math.round(age/60000)}m ago`
+          : age<86400000 ? `${Math.round(age/3600000)}h ago`
+          : `${Math.round(age/86400000)}d ago`;
+        el('sync-label').textContent=`Last synced ${c.synced} · ${ageStr}`;
+        el('tb-sub').textContent=c.sub;
+        populateFilters(); applyFilters();
+        return; // Done — no fetch needed
       }
-      if (row["Hub"]) hubs.add(row["Hub"]);
-    });
-
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-    const yEl = document.getElementById('yearFilter');
-    yEl.innerHTML = '<option value="">All years</option>';
-    [...years].sort().reverse().forEach(y => yEl.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
-
-    const mEl = document.getElementById('monthFilter');
-    mEl.innerHTML = '<option value="">All months</option>';
-    [...months].sort().forEach(m => mEl.insertAdjacentHTML('beforeend', `<option value="${m}">${monthNames[+m-1]}</option>`));
-
-    const hEl = document.getElementById('hubFilter');
-    hEl.innerHTML = '<option value="">All hubs</option>';
-    [...hubs].sort().forEach(h => hEl.insertAdjacentHTML('beforeend', `<option value="${h}">${h}</option>`));
-
-    // Default to current month/year
-    const now = new Date();
-    yEl.value = now.getFullYear().toString();
-    mEl.value = String(now.getMonth()+1).padStart(2,'0');
+    }catch(e){}
   }
 
-  function applyFilter() {
-    const y = document.getElementById('yearFilter').value;
-    const m = document.getElementById('monthFilter').value;
-    const h = document.getElementById('hubFilter').value;
+  // No cache or forced refresh — fetch live
+  btn.disabled=true; btn.textContent='Syncing…';
+  el('sync-label').textContent='Fetching latest data…';
 
-    filteredData = allData.filter(row => {
-      if (y && !row["Date"].startsWith(y)) return false;
-      if (m && row["Date"].split('-')[1] !== m) return false;
-      if (h && row["Hub"] !== h) return false;
-      return true;
-    });
+  showStatus('Loading live sheet and form submissions…','loading');
 
-    updateMetrics();
-    updateCharts();
-    updateTable();
+  let liveRows=[], formRows=[];
+  const errors=[];
+
+  // 1. Live daily sheet
+  try{
+    liveRows = await fetchSheet(LIVE_SHEET_ID,
+      `JSON-only extraction. Read Google Drive file "${LIVE_SHEET_ID}".
+Find the main data tab. Headers: Driver ID, Link, Date, OC name, Hub location, HVD or Historical, Reason for Visit, Issue Resolved?, If no reason, Freebies Given, Any feedback, Issue resolved 2nd check, Reason.
+Return ONLY a raw JSON array starting with [. No markdown. No preamble.
+Each element: {"driverID":"","date":"","ocName":"","hvdType":"","reason":"","resolved":"","unresolvedReason":"","freebies":"","feedback":"","secondCheck":"","hub":"","source":"live","subReason":"","reasonNotes":"","feedbackType":"","driverFeedback":""}.
+Map "HVD or Historical" to hvdType. Map "Reason for Visit" to reason. Map "Issue Resolved?" to resolved. Map "If no, reason" to unresolvedReason. Map "Freebies Given" to freebies. Map "Any feedback" to feedback. Map "Issue resolved 2nd check" to secondCheck. Map "Hub location" to hub.
+Only include rows where Driver ID is a valid number. Skip header rows and pivot table rows. Return [] if unreadable.`,
+      'Live sheet'
+    );
+  } catch(e){ errors.push('Live sheet: '+e.message); }
+
+  // 2a. Form sheet — tab "Hub Visit Log"
+  
+  try{
+    formRows = await fetchSheet(FORM_SHEET_ID,
+      `JSON-only extraction. Read Google Drive file "${FORM_SHEET_ID}".
+Find the tab named "Hub Visit Log" with columns: Driver ID, Date, Hub, OC Name, Reasons, Sub Reason, Reason Notes, Feedback Type, Driver Feedback.
+Return ONLY a raw JSON array starting with [. No markdown. No preamble.
+Each element: {"driverID":"","date":"","ocName":"","hvdType":"","reason":"","resolved":"","unresolvedReason":"","freebies":"","feedback":"","secondCheck":"","hub":"","source":"form","subReason":"","reasonNotes":"","feedbackType":"","driverFeedback":""}.
+Map Reasons to reason. Map Hub to hub. Map OC Name to ocName. Map Feedback Type to feedbackType. Map Driver Feedback to driverFeedback. Map Reason Notes to reasonNotes. Map Sub Reason to subReason. hvdType="", resolved="", freebies="".
+Only include rows where Driver ID is a valid number. Skip header rows. Return [] if unreadable.`,
+      'Form sheet'
+    );
+  } catch(e){ errors.push('Form sheet: '+e.message); }
+
+
+
+  // 3. Merge — deduplicate by driverID+date, live sheet takes priority
+  const seen = new Set();
+  const merged = [];
+
+  // Normalise key: driverID + YYYY-MM-DD date to handle different date formats
+  function dedupeKey(r){
+    const d = pd(r.date);
+    const dateStr = d ? d.toISOString().slice(0,10) : r.date;
+    return `${String(r.driverID).trim()}_${dateStr}`;
   }
 
-  function resetFilter() {
-    document.getElementById('yearFilter').value = '';
-    document.getElementById('monthFilter').value = '';
-    document.getElementById('hubFilter').value = '';
-    applyFilter();
-  }
+  // Add live rows first (priority)
+  liveRows.forEach(r=>{
+    if(!r.driverID) return;
+    const key = dedupeKey(r);
+    if(!seen.has(key)){ seen.add(key); merged.push({...r, _parsed: pd(r.date)}); }
+  });
 
-  // ── Metrics ──
-  function updateMetrics() {
-    const now = new Date();
-    const curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    const weekAgo  = new Date(now - 7*86400000);
-
-    document.getElementById('totalVisits').textContent   = filteredData.length;
-    document.getElementById('monthVisits').textContent   = filteredData.filter(r => r["Date"]?.startsWith(curMonth)).length;
-    document.getElementById('weekVisits').textContent    = filteredData.filter(r => { try { return new Date(r["Date"]) >= weekAgo; } catch { return false; } }).length;
-    document.getElementById('uniqueDrivers').textContent = new Set(filteredData.map(r => r["Driver ID"])).size;
-  }
-
-  // ── Charts ──
-  const COLORS = ['#1a5c8c','#e74c3c','#f39c12','#27ae60','#9b59b6','#3498db','#e67e22','#1abc9c','#e91e63','#00bcd4'];
-
-  function updateCharts() {
-    buildBar('hubChart',      count(filteredData, "Hub"),           'hub');
-    buildDoughnut('reasonChart',  count(filteredData, "Reasons"),   'reason');
-    buildPie('feedbackChart', count(filteredData, "Feedback Type"), 'feedback');
-    buildLine('timeChart',    filteredData,                         'time');
-  }
-
-  function count(data, key) {
-    const c = {};
-    data.forEach(r => { if (r[key]) c[r[key]] = (c[r[key]]||0)+1; });
-    return c;
-  }
-
-  function buildBar(id, counts, key) {
-    const ctx = document.getElementById(id).getContext('2d');
-    if (charts[key]) charts[key].destroy();
-    charts[key] = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: Object.keys(counts), datasets: [{ label: 'Visits', data: Object.values(counts), backgroundColor: '#1a5c8c', borderColor: '#144d78', borderWidth: 1 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-
-  function buildDoughnut(id, counts, key) {
-    const ctx = document.getElementById(id).getContext('2d');
-    if (charts[key]) charts[key].destroy();
-    charts[key] = new Chart(ctx, {
-      type: 'doughnut',
-      data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: COLORS, borderColor: '#fff', borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-
-  function buildPie(id, counts, key) {
-    const ctx = document.getElementById(id).getContext('2d');
-    if (charts[key]) charts[key].destroy();
-    charts[key] = new Chart(ctx, {
-      type: 'pie',
-      data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: COLORS, borderColor: '#fff', borderWidth: 2 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-
-  function buildLine(id, data, key) {
-    const dateCounts = {};
-    data.forEach(r => { const d = r["Date"]||'Unknown'; dateCounts[d] = (dateCounts[d]||0)+1; });
-    const sorted = Object.keys(dateCounts).sort();
-    const ctx = document.getElementById(id).getContext('2d');
-    if (charts[key]) charts[key].destroy();
-    charts[key] = new Chart(ctx, {
-      type: 'line',
-      data: { labels: sorted, datasets: [{ label: 'Visits', data: sorted.map(d => dateCounts[d]), borderColor: '#1a5c8c', backgroundColor: 'rgba(26,92,140,0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-
-  // ── Table ──
-  function updateTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!filteredData.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">No data for selected filters</td></tr>';
-      return;
+  // Add form rows that aren't already in live
+  formRows.forEach(r=>{
+    if(!r.driverID) return;
+    const key = dedupeKey(r);
+    if(!seen.has(key)){
+      seen.add(key);
+      const reason = [r.reason, r.subReason].filter(Boolean).join(' › ') || '';
+      const feedback = r.driverFeedback || r.feedbackType || r.feedback || '';
+      merged.push({...r, reason, feedback, _parsed: pd(r.date)});
     }
-    tbody.innerHTML = filteredData.slice(-50).reverse().map(r => `
-      <tr>
-        <td><strong>${r["Driver ID"]||'—'}</strong></td>
-        <td>${r["Date"]||'—'}</td>
-        <td><span class="tag">${r["Hub"]||'—'}</span></td>
-        <td>${r["Reasons"]||'—'}</td>
-        <td>${r["Feedback Type"] ? '<span class="tag">'+r["Feedback Type"]+'</span>' : '—'}</td>
-        <td>${r["OC Name"]||'—'}</td>
-      </tr>`).join('');
+  });
+
+  // Sort by date desc
+  merged.sort((a,b)=>{
+    const da=a._parsed, db=b._parsed;
+    if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+    return db-da;
+  });
+
+  ALL = merged;
+
+  // Update topbar subtitle
+
+  if(errors.length){
+    showStatus('⚠️ Some sources failed: '+errors.join(' | '),'warning');
+  } else {
+    clearStatus();
   }
 
-  // ── Init ──
-  initTheme();
-  loadData();
-  setInterval(loadData, AUTO_REFRESH_MS);
+  const _sub=`${liveRows.length} live · ${formRows.length} form · ${merged.length} total`;
+  el('tb-sub').textContent=_sub;
+  el('sync-label').textContent=`Last synced ${new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+  try{
+    const synced = new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(CACHE_KEY,JSON.stringify({data:ALL,ts:Date.now(),synced,sub:_sub}));
+  }catch(e){}
+  populateFilters();
+  applyFilters();
+  btn.disabled=false; btn.textContent='↻ Refresh';
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function populateFilters(){
+  const months=[...new Set(ALL.map(r=>{const d=r._parsed;return d?mk(d):null;}).filter(Boolean))].sort().reverse();
+  el('f-month').innerHTML='<option value="">All months</option>'+months.map(m=>{
+    const [yr,mo] = m.split('-');
+    const label = new Date(yr, mo-1, 1).toLocaleString('default',{month:'long',year:'numeric'});
+    return `<option value="${m}">${label}</option>`;
+  }).join('');
+  const hubs=[...new Set(ALL.map(r=>r.hub).filter(Boolean))].sort();
+  el('f-hub').innerHTML='<option value="">All hubs</option>'+hubs.map(h=>`<option>${h}</option>`).join('');
+  const ocs=[...new Set(ALL.map(r=>r.ocName).filter(Boolean))].sort();
+  el('f-oc').innerHTML='<option value="">All OCs</option>'+ocs.map(o=>`<option>${o}</option>`).join('');
+}
+
+function applyFilters(){
+  const mon=el('f-month').value, hub=el('f-hub').value;
+  const hvdF=el('f-hvd').value, resF=el('f-resolved').value;
+  const ocF=el('f-oc').value, q=el('search').value.toLowerCase();
+  const active=mon||hub||hvdF||resF||ocF||q;
+  el('clear-btn').style.display=active?'inline-flex':'none';
+
+  FILT=ALL.filter(r=>{
+    const d=r._parsed;
+    if(mon&&mk(d)!==mon) return false;
+    if(hub&&r.hub!==hub) return false;
+    if(hvdF&&r.hvdType!==hvdF) return false;
+    if(resF&&effectiveResolved(r)!==resF) return false;
+    if(ocF&&r.ocName!==ocF) return false;
+    if(q&&![r.driverID,r.hub,r.ocName,r.reason,r.feedback,r.freebies]
+      .some(v=>String(v||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  updateKPIs(); drawCharts(); drawTable();
+}
+
+function clearFilters(){
+  ['search','f-month','f-hub','f-hvd','f-resolved','f-oc'].forEach(id=>{
+    const e=el(id); if(e.tagName==='INPUT') e.value=''; else e.value='';
+  });
+  applyFilters();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs(){
+  const now=new Date(), thisMon=mk(now), weekAgo=new Date(now-7*864e5);
+  const prevMon=mk(new Date(now.getFullYear(),now.getMonth()-1,1));
+  const thisC=FILT.filter(r=>{const d=r._parsed;return d&&mk(d)===thisMon;}).length;
+  const prevC=FILT.filter(r=>{const d=r._parsed;return d&&mk(d)===prevMon;}).length;
+  const hvdC=FILT.filter(r=>r.hvdType==='HVD').length;
+  const histC=FILT.filter(r=>r.hvdType==='Historical').length;
+  const resolvedC=FILT.filter(r=>effectiveResolved(r)==='Yes').length;
+  const unresolvedC=FILT.filter(r=>effectiveResolved(r)==='No').length;
+
+  el('k-total').textContent=FILT.length;
+  el('k-month').textContent=thisC;
+  el('k-month-lbl').textContent=now.toLocaleString('default',{month:'long'});
+  el('k-week').textContent=FILT.filter(r=>{const d=r._parsed;return d&&d>=weekAgo;}).length;
+  el('k-drivers').textContent=new Set(FILT.map(r=>r.driverID).filter(Boolean)).size;
+  el('k-hvd').textContent=hvdC;
+  el('k-resolved').textContent=resolvedC;
+  el('k-unresolved').textContent=unresolvedC;
+
+  if(prevC>0){
+    const pct=Math.round(((thisC-prevC)/prevC)*100);
+    const b=el('k-month-badge'); b.style.display='inline-flex';
+    b.className=`kpi-badge ${pct>=0?'bg-green':'bg-red'}`;
+    b.textContent=`${pct>=0?'↑':'↓'} ${Math.abs(pct)}% vs last month`;
+  }
+  if(FILT.length>0){
+    const tot=FILT.length;
+    const hp=Math.round(hvdC/tot*100), hiP=Math.round(histC/tot*100);
+    el('k-hvd-pct').style.display='inline-flex';
+    el('k-hvd-pct').textContent=`${hp}% of visits`;
+    el('hvd-pct-lbl').textContent=`${hvdC} (${hp}%)`;
+    el('hist-pct-lbl').textContent=`${histC} (${hiP}%)`;
+    el('hvd-prog').style.width=`${hp}%`;
+    el('hist-prog').style.width=`${hiP}%`;
+    const rPct=resolvedC+unresolvedC>0?Math.round(resolvedC/(resolvedC+unresolvedC)*100):0;
+    const uPct=100-rPct;
+    el('k-resolved-pct').style.display='inline-flex'; el('k-resolved-pct').textContent=`${rPct}% resolution rate`;
+    el('k-unresolved-pct').style.display='inline-flex'; el('k-unresolved-pct').textContent=`${uPct}% pending`;
+  }
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+const PAL=['#0f172a','#2563eb','#16a34a','#d97706','#7c3aed','#dc2626','#0891b2','#be185d','#059669','#ea580c'];
+const FB_C={'Complaint':'#dc2626','Suggestion':'#d97706','Praise':'#16a34a','Question':'#2563eb','Incident report':'#7c3aed'};
+const BASE={
+  responsive:true, maintainAspectRatio:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{backgroundColor:'#fff',titleColor:'#0f172a',bodyColor:'#64748b',borderColor:'#e2e8f0',borderWidth:1,padding:12,cornerRadius:8,titleFont:{weight:'700',size:12},bodyFont:{size:12}},
+  },
+  scales:{
+    x:{ticks:{color:'#94a3b8',font:{size:11}},grid:{display:false},border:{display:false}},
+    y:{ticks:{color:'#94a3b8',font:{size:11}},grid:{color:'#f1f5f9',lineWidth:1},border:{display:false}},
+  },
+};
+function deep(a,b){const o={...a};for(const k of Object.keys(b))o[k]=(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))?deep(a[k]||{},b[k]):b[k];return o;}
+function mkC(id,type,data,opts={}){
+  const canvas = el(id);
+  if(!canvas) return;
+  if(CH[id]) CH[id].destroy();
+  CH[id]=new Chart(canvas.getContext('2d'),{type,data,options:deep(BASE,opts)});
+}
+const LEG={plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#64748b',boxWidth:10,padding:14,font:{size:11,weight:'600'}}}}};
+const LEG_BOT={plugins:{legend:{display:true,position:'bottom',labels:{color:'#64748b',boxWidth:10,padding:10,font:{size:11}}}}};
+const NO_SCALE={scales:{x:{display:false},y:{display:false}}};
+const H_SCALE={indexAxis:'y',scales:{
+  x:{ticks:{color:'#94a3b8',font:{size:11}},grid:{color:'#f1f5f9'},border:{display:false}},
+  y:{ticks:{color:'#374151',font:{size:11}},grid:{display:false},border:{display:false}},
+}};
+
+function cnt(rows,key){
+  return rows.reduce((a,r)=>{const k=r[key]||'—';a[k]=(a[k]||0)+1;return a;},{});
+}
+
+function drawCharts(){
+  // Weekly stacked bar
+  const wH={},wHist={};
+  FILT.forEach(r=>{
+    const d=r._parsed; if(!d) return;
+    const mon=new Date(d); mon.setDate(d.getDate()-((d.getDay()+6)%7));
+    const k=mon.toISOString().slice(0,10);
+    if(r.hvdType==='HVD') wH[k]=(wH[k]||0)+1;
+    else wHist[k]=(wHist[k]||0)+1;
+  });
+  const wk=[...new Set([...Object.keys(wH),...Object.keys(wHist)])].sort();
+  mkC('c-time','bar',{
+    labels:wk.map(k=>k.slice(5)),
+    datasets:[
+      {label:'HVD',data:wk.map(k=>wH[k]||0),backgroundColor:'#16a34a',borderRadius:4,stack:'s',borderSkipped:false},
+      {label:'Historical',data:wk.map(k=>wHist[k]||0),backgroundColor:'#93c5fd',borderRadius:4,stack:'s',borderSkipped:false},
+    ],
+  },LEG);
+
+  // HVD donut
+  const hvdC=FILT.filter(r=>r.hvdType==='HVD').length;
+  const histC=FILT.filter(r=>r.hvdType==='Historical').length;
+  const otherC=FILT.length-hvdC-histC;
+  mkC('c-hvd','doughnut',{
+    labels:['HVD','Historical','Unknown'],
+    datasets:[{data:[hvdC,histC,otherC],backgroundColor:['#16a34a','#2563eb','#e2e8f0'],borderWidth:4,borderColor:'#fff'}],
+  },{...LEG_BOT,...NO_SCALE,cutout:'65%'});
+
+  // Resolution donut
+  const resY=FILT.filter(r=>effectiveResolved(r)==='Yes').length;
+  const resN=FILT.filter(r=>effectiveResolved(r)==='No').length;
+  const resU=FILT.length-resY-resN;
+  mkC('c-resolved','doughnut',{
+    labels:['Resolved','Unresolved','Unknown'],
+    datasets:[{data:[resY,resN,resU],backgroundColor:['#16a34a','#dc2626','#e2e8f0'],borderWidth:4,borderColor:'#fff'}],
+  },{...LEG_BOT,...NO_SCALE,cutout:'60%'});
+
+
+
+  // Hub donut
+  const hubE=Object.entries(cnt(FILT,'hub')).sort((a,b)=>b[1]-a[1]);
+  mkC('c-hub','doughnut',{
+    labels:hubE.map(e=>e[0]||'Unknown'),
+    datasets:[{data:hubE.map(e=>e[1]),backgroundColor:PAL.slice(0,hubE.length),borderWidth:4,borderColor:'#fff'}],
+  },{...LEG_BOT,...NO_SCALE,cutout:'60%'});
+
+
+  // HVD by hub stacked
+  const hubs=[...new Set(FILT.map(r=>r.hub).filter(Boolean))].sort();
+  mkC('c-hvd-hub','bar',{
+    labels:hubs.length?hubs:['No hub data'],
+    datasets:[
+      {label:'HVD',data:hubs.map(h=>FILT.filter(r=>r.hub===h&&r.hvdType==='HVD').length),backgroundColor:'#16a34a',borderRadius:4,stack:'s',borderSkipped:false},
+      {label:'Historical',data:hubs.map(h=>FILT.filter(r=>r.hub===h&&r.hvdType==='Historical').length),backgroundColor:'#93c5fd',borderRadius:4,stack:'s',borderSkipped:false},
+    ],
+  },LEG);
+
+  // Visit Frequency
+  const driverVisits = {};
+  FILT.forEach(r=>{ if(r.driverID) driverVisits[r.driverID]=(driverVisits[r.driverID]||0)+1; });
+  const freqBuckets = {'1 visit':0,'2 visits':0,'3 visits':0,'4+ visits':0};
+  Object.values(driverVisits).forEach(n=>{
+    if(n===1) freqBuckets['1 visit']++;
+    else if(n===2) freqBuckets['2 visits']++;
+    else if(n===3) freqBuckets['3 visits']++;
+    else freqBuckets['4+ visits']++;
+  });
+  mkC('c-freq','bar',{
+    labels:Object.keys(freqBuckets),
+    datasets:[{data:Object.values(freqBuckets),backgroundColor:['#e2e8f0','#93c5fd','#2563eb','#1e40af'],borderRadius:6,borderSkipped:false}],
+  },{plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#0f172a',bodyColor:'#64748b',borderColor:'#e2e8f0',borderWidth:1,padding:12,cornerRadius:8}}});
+
+  // Day of Week
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const dayCounts=new Array(7).fill(0);
+  FILT.forEach(r=>{
+    const d=r._parsed; if(!d) return;
+    const dow=(d.getDay()+6)%7; // 0=Mon
+    dayCounts[dow]++;
+  });
+  mkC('c-dow','bar',{
+    labels:days.map(d=>d.slice(0,3)),
+    datasets:[{data:dayCounts,backgroundColor:dayCounts.map((_,i)=>i<5?'#2563eb':'#93c5fd'),borderRadius:6,borderSkipped:false}],
+  },{plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#0f172a',bodyColor:'#64748b',borderColor:'#e2e8f0',borderWidth:1,padding:12,cornerRadius:8,callbacks:{title:t=>days[t[0].dataIndex]}}}});
+
+  // Feedback type bars
+  renderFeedbackBars();
+  // Word cloud
+  renderWordCloud();
+}
+
+function renderWordCloud(){
+  const container = el('wc-container');
+  if(!container) return;
+
+  const counts = {};
+  FILT.forEach(r=>{
+    if(!r.reason) return;
+    r.reason.split(',').forEach(s=>{
+      const k = s.trim().toUpperCase();
+      if(k) counts[k] = (counts[k]||0) + 1;
+    });
+  });
+
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,24);
+  if(!entries.length){
+    container.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:60px 0">No reason data</div>';
+    return;
+  }
+
+  const max = entries[0][1];
+  const min = entries[entries.length-1][1];
+
+  // Rich colour palette with backgrounds
+  const THEMES = [
+    {bg:'#dbeafe',color:'#1d4ed8',border:'#bfdbfe'},
+    {bg:'#dcfce7',color:'#15803d',border:'#86efac'},
+    {bg:'#fef3c7',color:'#b45309',border:'#fcd34d'},
+    {bg:'#ede9fe',color:'#6d28d9',border:'#c4b5fd'},
+    {bg:'#fee2e2',color:'#b91c1c',border:'#fca5a5'},
+    {bg:'#cffafe',color:'#0e7490',border:'#a5f3fc'},
+    {bg:'#fce7f3',color:'#9d174d',border:'#f9a8d4'},
+    {bg:'#f0fdf4',color:'#166534',border:'#86efac'},
+    {bg:'#fff7ed',color:'#c2410c',border:'#fed7aa'},
+    {bg:'#f5f3ff',color:'#5b21b6',border:'#ddd6fe'},
+  ];
+
+  const shuffled = [...entries].sort(() => Math.random() - 0.45);
+
+  container.innerHTML = shuffled.map(([word, count], i) => {
+    const ratio = max === min ? 0.5 : (count - min) / (max - min);
+    const fontSize = Math.round(11 + ratio * 16);
+    const theme = THEMES[i % THEMES.length];
+    const weight = ratio > 0.6 ? '700' : ratio > 0.3 ? '600' : '500';
+    const pad = ratio > 0.6 ? '5px 12px' : '4px 10px';
+
+    return `<div title="${count} visit${count!==1?'s':''}"
+      style="
+        font-size:${fontSize}px;
+        font-weight:${weight};
+        color:${theme.color};
+        background:${theme.bg};
+        border:1px solid ${theme.border};
+        padding:${pad};
+        border-radius:99px;
+        cursor:default;
+        transition:transform .15s, box-shadow .15s;
+        white-space:nowrap;
+        line-height:1.4;
+        box-shadow:0 1px 2px rgba(0,0,0,.04);
+        display:inline-flex;
+        align-items:center;
+        gap:5px;
+      "
+      onmouseover="this.style.transform='translateY(-2px) scale(1.06)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.12)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 1px 2px rgba(0,0,0,.04)'"
+    >
+      ${word}
+      <span style="
+        font-size:${Math.max(9,fontSize-3)}px;
+        font-weight:700;
+        background:${theme.color};
+        color:#fff;
+        border-radius:99px;
+        padding:1px 6px;
+        line-height:1.4;
+      ">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderFeedbackBars(){
+  const FB_COLORS = {
+    'Complaint':   {bg:'#fee2e2', bar:'#dc2626', text:'#dc2626'},
+    'Suggestion':  {bg:'#fef3c7', bar:'#d97706', text:'#d97706'},
+    'Praise':      {bg:'#dcfce7', bar:'#16a34a', text:'#16a34a'},
+    'Question':    {bg:'#dbeafe', bar:'#2563eb', text:'#2563eb'},
+    'Incident report': {bg:'#ede9fe', bar:'#7c3aed', text:'#7c3aed'},
+  };
+  const container = el('fb-bars');
+  if(!container) return;
+
+  // Count from feedbackType or feedback field
+  const counts = {};
+  FILT.forEach(r=>{
+    const k = r.feedbackType || '';
+    if(k) counts[k] = (counts[k]||0) + 1;
+  });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const total = entries.reduce((s,e)=>s+e[1], 0);
+
+  if(!entries.length){
+    container.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:40px 0">No feedback data</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(([label, count])=>{
+    const pct = total > 0 ? Math.round(count/total*100) : 0;
+    const c = FB_COLORS[label] || {bg:'#f1f5f9', bar:'#94a3b8', text:'#64748b'};
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:12px;font-weight:600;color:${c.text};display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;border-radius:2px;background:${c.bar};display:inline-block"></span>
+            ${label}
+          </span>
+          <span style="font-size:12px;font-weight:700;color:#0f172a">${count} <span style="color:#94a3b8;font-weight:400">(${pct}%)</span></span>
+        </div>
+        <div style="background:#f1f5f9;border-radius:99px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${c.bar};border-radius:99px;transition:width .5s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function drawTable(){
+  const rows=FILT.slice(0,150);
+  el('tbl-title').textContent=`${FILT.length.toLocaleString()} visits`;
+  const body=el('tbl-body');
+  if(!rows.length){body.innerHTML='<tr class="empty-row"><td colspan="12">No records match the filter.</td></tr>';el('tbl-footer').style.display='none';return;}
+  body.innerHTML=rows.map(r=>{
+    const hvd=r.hvdType==='HVD', hist=r.hvdType==='Historical';
+    const srcTag=r.source==='live'
+      ?'<span class="src-tag src-live-tag">live</span>'
+      :'<span class="src-tag src-new-tag">form</span>';
+    return `<tr class="${hvd?'hvd-row':hist?'hist-row':''}">
+      <td>${srcTag}</td>
+      <td class="td-id" style="color:${hvd?'#16a34a':hist?'#2563eb':'#0f172a'}">${r.driverID||'—'}</td>
+      <td>${hvdPill(r.hvdType)}</td>
+      <td class="td-dim" style="white-space:nowrap">${fd(r._parsed)}</td>
+      <td class="td-dim">${r.ocName||'—'}</td>
+      <td>${r.hub||'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.reason||'—'}</td>
+      <td>${resPill(effectiveResolved(r))}</td>
+      <td class="td-dim" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.unresolvedReason||'—'}</td>
+      <td class="td-dim">${r.freebies||'—'}</td>
+      <td class="td-dim" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.feedback||r.driverFeedback||'—'}</td>
+      <td>${r.secondCheck?resPill(r.secondCheck):'—'}</td>
+    </tr>`;
+  }).join('');
+  const f=el('tbl-footer');
+  if(FILT.length>150){f.style.display='block';f.textContent=`Showing 150 of ${FILT.length} records · use filters to narrow down`;}
+  else f.style.display='none';
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const pane = el('tab-'+tab);
+  if(pane) pane.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    if(b.textContent.toLowerCase().includes(tab==='dashboard'?'dashboard':'visit')) b.classList.add('active');
+  });
+  if(tab==='visitlog'){
+    const searchLog = el('search-log'), search = el('search');
+    if(searchLog && search) searchLog.value = search.value;
+    scrollTo(0,0);
+  }
+}
+
+loadData();
 </script>
 </body>
 </html>
