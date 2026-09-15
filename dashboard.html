@@ -164,6 +164,40 @@
 
     /* Filterbar */
     .filterbar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+
+    /* ── Tabs ── */
+    .tab-bar{
+      display:flex;align-items:flex-end;gap:4px;
+      margin-bottom:24px;width:fit-content;
+    }
+    .tab-btn{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:10px 22px;border-radius:8px 8px 0 0;
+      border:1px solid var(--border);border-top:2px solid transparent;
+      background:var(--bg-subtle);color:var(--muted);
+      font-size:13px;font-weight:500;cursor:pointer;
+      transition:all .15s;font-family:inherit;white-space:nowrap;
+    }
+    .tab-btn.active{
+      background:var(--surface);color:var(--text);font-weight:600;
+      border-top:2px solid var(--blue);border-bottom:1px solid var(--surface);
+      margin-bottom:-1px;
+    }
+    .tab-btn:hover:not(.active){color:var(--text);background:var(--surface);}
+
+    /* ── Expandable rows ── */
+    .expand-row { cursor:pointer; user-select:none; }
+    .expand-row:hover { background:#f0f9ff !important; }
+    .expand-row td:first-child::before {
+      content:'▶';font-size:9px;color:var(--muted);margin-right:8px;
+      transition:transform .2s;display:inline-block;
+    }
+    .expand-row.open td:first-child::before { transform:rotate(90deg); }
+    .detail-row { display:none; background:#f8fafc; }
+    .detail-row.open { display:table-row; }
+    .detail-row td { padding:12px 16px 16px 40px; border-bottom:1px solid var(--border); }
+    .detail-label { font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px; }
+    .detail-text { font-size:13px;color:var(--text);line-height:1.6; }
   </style>
 </head>
 <body>
@@ -185,20 +219,10 @@
   <hr class="sb-sep"/>
 
   <div class="sb-sec">
-    <div class="sb-lbl">Jump to</div>
-    <button class="sb-item" onclick="scrollTo(0,0)"><span class="ico">🏠</span>Overview</button>
-    <button class="sb-item" onclick="jmp('hvd-section')"><span class="ico">⭐</span>HVD Analysis</button>
-    <button class="sb-item" onclick="jmp('hub-section')"><span class="ico">📍</span>By Hub</button>
-    <button class="sb-item" onclick="switchTab('visitlog')"><span class="ico">📋</span>Visit Log</button>
-  </div>
-
-  <hr class="sb-sep"/>
-
-  <div class="sb-sec">
     <div class="sb-lbl">Data sources</div>
     <div style="padding:6px 8px">
       <div class="src-badge src-live">● Live sheet</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Daily hub visit log</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Snapshot · up to 15 Sep 2026</div>
       <div class="src-badge src-new">● Form sheet</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">New form submissions</div>
     </div>
@@ -224,6 +248,7 @@
         <option value="">All drivers</option>
         <option value="HVD">⭐ HVD only</option>
         <option value="Historical">📋 Historical only</option>
+        <option value="">Non HVD only</option>
       </select>
       <select class="inp" id="f-resolved" onchange="applyFilters()" style="min-width:120px">
         <option value="">All outcomes</option>
@@ -239,13 +264,19 @@
     <div id="status"></div>
 
     <!-- Tab bar -->
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('visitlog')">📋 Visit Log</button>
+    <div style="border-bottom:1px solid var(--border);margin-bottom:0">
+    <div class="tab-bar" style="margin-bottom:0">
+      <button class="tab-btn active" id="tbtn-dashboard" onclick="switchTab('dashboard')">
+        <span style="font-size:15px">📊</span> Dashboard
+      </button>
+      <button class="tab-btn" id="tbtn-visitlog" onclick="switchTab('visitlog')">
+        <span style="font-size:15px">📋</span> Visit Log
+      </button>
+    </div>
     </div>
 
     <!-- Dashboard tab -->
-    <div id="tab-dashboard" class="tab-pane active">
+    <div id="tab-dashboard" style="display:block">
 
     <div class="filterbar">
       <input class="inp" style="flex:1;min-width:220px" type="text" id="search" placeholder="🔍  Search driver ID, OC name, reason, feedback…" oninput="applyFilters()" />
@@ -304,7 +335,7 @@
     <!-- Row 1: Trend + HVD split -->
     <div class="g3 mb14">
       <div class="card">
-        <div class="card-hd"><div><div class="card-title">Visits Over Time</div><div class="card-desc">Weekly — HVD vs Historical stacked</div></div></div>
+        <div class="card-hd"><div><div class="card-title">Visits Over Time</div><div class="card-desc">Weekly — HVD, Historical and Non HVD stacked</div></div></div>
         <div class="card-body"><div class="cw-tall"><canvas id="c-time"></canvas></div></div>
       </div>
       <div class="card" id="hvd-section">
@@ -334,7 +365,7 @@
     </div>
     <div class="g2 mb14">
       <div class="card">
-        <div class="card-hd"><div><div class="card-title">Issue Resolution Rate</div><div class="card-desc">Resolved vs unresolved visits</div></div></div>
+        <div class="card-hd"><div><div class="card-title">Issue Resolution Rate</div><div class="card-desc">Resolved vs unresolved — including Non HVD</div></div></div>
         <div class="card-body"><div class="cw"><canvas id="c-resolved"></canvas></div></div>
       </div>
 
@@ -368,10 +399,13 @@
         <div class="card-body"><div class="cw"><canvas id="c-hvd-hub"></canvas></div></div>
       </div></div>
 
-    <!-- Table -->
-    <div class="section-hd" id="tbl-section" style="display:none">
-      <div class="section-hd-title">Visit Log</div>
-      <div class="section-hd-line"></div>
+    </div><!-- /tab-dashboard -->
+
+    <!-- Visit Log tab -->
+    <div id="tab-visitlog" style="display:none">
+    <div class="filterbar">
+      <input class="inp" style="flex:1;min-width:220px" type="text" id="search-log"
+        placeholder="🔍  Search driver ID, OC name, reason…" oninput="applyFilters()"/>
     </div>
     <div class="card">
       <div class="card-hd">
@@ -381,15 +415,16 @@
         <table>
           <thead>
             <tr>
-              <th>Source</th><th>Driver ID</th><th>Type</th><th>Date</th><th>OC Name</th>
-              <th>Hub</th><th>Reason</th><th>Resolved?</th><th>If No</th>
-              <th>Feedback / Notes</th><th>2nd Check</th>
+              <th>Driver ID</th><th>Date</th><th>OC Name</th><th>Hub Location</th>
+              <th>HVD or Historical</th><th>Reason for Visit</th><th>Issue Resolved?</th>
+              <th>If No, Reason</th><th>Any Feedback</th><th>Issue Resolved 2nd Check</th>
             </tr>
           </thead>
-          <tbody id="tbl-body"><tr class="empty-row"><td colspan="12">Loading…</td></tr></tbody>
+          <tbody id="tbl-body"><tr class="empty-row"><td colspan="10">Loading…</td></tr></tbody>
         </table>
       </div>
       <div class="tbl-footer" id="tbl-footer" style="display:none"></div>
+    </div>
     </div>
     </div><!-- /tab-visitlog -->
 
@@ -403,8 +438,11 @@ const LIVE_SHEET_ID = '1g5EvBdrBIS7JOSveNSmmLXC6LsWL8QHTygY7n8UP8XQ'; // Live da
 const FORM_SHEET_ID = '1LoFA87j6UD06C6GP7KTyEOoSAS2K6S9w0QYEJWw4o3k'; // Form submissions
 const API = 'https://api.anthropic.com/v1/messages';
 const DRIVE_MCP = 'https://drivemcp.googleapis.com/mcp/v1';
-const CACHE_KEY = 'hvd_dashboard_v1';
+const CACHE_KEY = 'hvd_dashboard_v2';
 // No TTL — cache persists until user clicks Refresh
+
+// ── Snapshotted data (15 Sep 2026) — updated weekly ──────────────────────
+const LIVE_SNAPSHOT = [{"driverID": "8148984", "date": "25/08/2026", "ocName": "Melvin", "hub": "Nottingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7897858", "date": "25/08/2026", "ocName": "Katriin", "hub": "Nottingham", "hvdType": "HVD", "reason": "PHL", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7871350", "date": "25/08/2026", "ocName": "Melvin", "hub": "Nottingham", "hvdType": "HVD", "reason": "DVLA,PHL,PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7869954", "date": "25/08/2026", "ocName": "Melvin", "hub": "Nottingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7888614", "date": "25/08/2026", "ocName": "Katriin", "hub": "Nottingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9281688", "date": "25/08/2026", "ocName": "Adam", "hub": "Birmingham", "hvdType": "HVD", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8560724", "date": "25/08/2026", "ocName": "Melvin", "hub": "Nottingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7881640", "date": "25/08/2026", "ocName": "Melvin", "hub": "Nottingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7871097", "date": "25/08/2026", "ocName": "Katriin", "hub": "Nottingham", "hvdType": "HVD", "reason": "new car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7919429", "date": "25/08/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHL,PHLONLINE", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8655803", "date": "25/08/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "Insurance", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9285544", "date": "26/08/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8561020", "date": "26/08/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9193106", "date": "26/08/2026", "ocName": "Adam", "hub": "Birmingham", "hvdType": "HVD", "reason": "Copyover", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9125243", "date": "26/08/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "Permission letter", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8281296", "date": "26/08/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "Safety", "resolved": "No", "unresolvedReason": "safety block- raised with CS as reason is unclear", "freebies": "", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8213939", "date": "27/08/2026", "ocName": "Caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "Council change", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8847907", "date": "27/08/2026", "ocName": "Caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "Blocked account", "resolved": "No", "unresolvedReason": "Compliance awaiting to get back to D", "freebies": "", "anyFeedback": "", "secondCheck": "No", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8732394", "date": "27/08/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7867807", "date": "01/09/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8355968", "date": "01/09/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8266058", "date": "01/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "Signage", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8208490", "date": "01/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "PCO,PHL", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8401101", "date": "01/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Lost Property", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8810715", "date": "01/09/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "HVD", "reason": "new car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8311563", "date": "01/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "Lost Property", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8229358", "date": "01/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PCO,PHL", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9150741", "date": "01/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car Wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8314826", "date": "01/09/2026", "ocName": "caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car Wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "2271517", "date": "01/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "CHECKCODE, INS, MOT, PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8279211", "date": "02/09/2026", "ocName": "caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8426750", "date": "02/09/2026", "ocName": "caleb", "hub": "Birmingham", "hvdType": "Historical", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "6546506", "date": "02/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "2302483", "date": "02/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "Reonboarding", "resolved": "Yes", "unresolvedReason": "", "freebies": "Signage", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8243078", "date": "02/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "3633241", "date": "02/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8314826", "date": "02/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Council change", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8180554", "date": "02/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHL extension", "resolved": "No", "unresolvedReason": "Document missing - D need to contact council", "freebies": "", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8275799", "date": "02/09/2026", "ocName": "caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8576524", "date": "03/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "PHL,PCO,INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8339556", "date": "03/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "Historical", "reason": "MOT,insurance", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8734371", "date": "03/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHL extension", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "3251507", "date": "03/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "Using standard because of scheduled trip, this is not available in flex", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8584243", "date": "07/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Lost Property", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "Pickup point needs to be updated", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8221177", "date": "07/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "Historical", "reason": "Sandwell extension", "resolved": "No", "unresolvedReason": "raised wtth compliance", "freebies": "", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "3281931", "date": "07/09/2026", "ocName": "caleb", "hub": "Birmingham", "hvdType": "Historical", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8506545", "date": "07/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "CALL IDs", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8281899", "date": "07/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "CAR APP", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9162849", "date": "08/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "MOT,PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "Navigation is getting better now", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8343876", "date": "08/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHL extension", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "Getting less trips in Dudley area", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9105482", "date": "08/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHV", "resolved": "No", "unresolvedReason": "D need to contact council", "freebies": "Air freshener", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7867725", "date": "08/09/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "HVD", "reason": "new car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "Flex prices decreasing", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8227996", "date": "08/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "when it is raining the surge pricing will take time to reflect", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8450547", "date": "09/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7942656", "date": "09/09/2026", "ocName": "Adam", "hub": "Nottingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "2640438", "date": "09/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "Historical", "reason": "Payment issue", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "driver was not paid for 1 trip and he was upset about it, voucher gave as gesture of goodwill", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8286936", "date": "09/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "car app", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8221177", "date": "10/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "PCO, PHL", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9036969", "date": "10/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8264378", "date": "10/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "Car App", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8396415", "date": "10/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHL", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8236266", "date": "10/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "Safety", "resolved": "No", "unresolvedReason": "driver need to provide update via Bolt app - raised on CS channel too", "freebies": "", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8655803", "date": "10/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "HVD", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7881629", "date": "10/09/2026", "ocName": "Kristina", "hub": "Birmingham", "hvdType": "Historical", "reason": "Car app", "resolved": "No", "unresolvedReason": "reactivation backlog", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7987030", "date": "14/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Poor Document quality", "resolved": "No", "unresolvedReason": "Raised with compliance", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "Yes", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8475737", "date": "14/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "MOT and vehicle suspension block", "resolved": "No", "unresolvedReason": "raised with CM", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8262711", "date": "14/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "HVD", "reason": "CAR APP", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8244090", "date": "14/09/2026", "ocName": "Melvin", "hub": "Birmingham", "hvdType": "HVD", "reason": "Lost Property", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "7928023", "date": "15/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "Car App", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "9500540", "date": "15/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "", "reason": "Car App", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "mistaken as HVD", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8482208", "date": "15/09/2026", "ocName": "Jabbar", "hub": "Birmingham", "hvdType": "Historical", "reason": "PHV", "resolved": "Yes", "unresolvedReason": "", "freebies": "Air freshener", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "8226521", "date": "15/09/2026", "ocName": "Caleb", "hub": "Birmingham", "hvdType": "HVD", "reason": "INSURANCE", "resolved": "Yes", "unresolvedReason": "", "freebies": "Car wash", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}, {"driverID": "3153926", "date": "15/09/2026", "ocName": "Caleb", "hub": "Birmingham", "hvdType": "Historical", "reason": "PENSION", "resolved": "No", "unresolvedReason": "Awaiting UKCS", "freebies": "", "anyFeedback": "", "secondCheck": "", "source": "live", "subReason": "", "reasonNotes": "", "feedbackType": "", "driverFeedback": ""}];
 
 
 let ALL=[], FILT=[], CH={};
@@ -416,12 +454,12 @@ const el  = id => document.getElementById(id);
 function pd(s){
   if(!s) return null;
   if(s.toLowerCase()==='today') return new Date();
-  // "Tuesday, August 25, 2026" format
-  const parsed = new Date(s);
-  if(!isNaN(parsed)) return parsed;
-  // DD/MM/YYYY
+  // DD/MM/YYYY — always try this first to avoid MM/DD ambiguity
   const p=s.split('/');
   if(p.length===3) return new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`);
+  // "Tuesday, August 25, 2026" long format
+  const parsed = new Date(s);
+  if(!isNaN(parsed)) return parsed;
   return null;
 }
 function fd(d){ return d?d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—'; }
@@ -445,8 +483,10 @@ function resPill(v){
   return `<span class="pill ${v==='Yes'?'p-yes':'p-no'}">${v==='Yes'?'✅ Yes':'❌ No'}</span>`;
 }
 function hvdPill(v){
-  if(!v) return '—';
-  return `<span class="pill ${v==='HVD'?'p-hvd':v==='Historical'?'p-hist':'p-nohvd'}">${v==='HVD'?'⭐ HVD':v==='Historical'?'📋 Historical':v}</span>`;
+  if(!v||v.trim()==='') return '<span class="pill p-nohvd">Non HVD</span>';
+  if(v==='HVD') return '<span class="pill p-hvd">⭐ HVD</span>';
+  if(v==='Historical') return '<span class="pill p-hist">📋 Historical</span>';
+  return `<span class="pill p-nohvd">${v}</span>`;
 }
 
 function showStatus(msg,type){
@@ -509,7 +549,7 @@ async function loadData(forceRefresh=false){
   const btn=el('refresh-btn');
   clearStatus();
   // Migrate old cache keys
-  ['hvd_cache','hvd_dashboard_cache'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
+  ['hvd_cache','hvd_dashboard_cache','hvd_dashboard_v1'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
 
   if(!forceRefresh){
     try{
@@ -538,18 +578,8 @@ async function loadData(forceRefresh=false){
   let liveRows=[], formRows=[];
   const errors=[];
 
-  // 1. Live daily sheet
-  try{
-    liveRows = await fetchSheet(LIVE_SHEET_ID,
-      `JSON-only extraction. Read Google Drive file "${LIVE_SHEET_ID}".
-Find the main data tab. Headers: Driver ID, Link, Date, OC name, Hub location, HVD or Historical, Reason for Visit, Issue Resolved?, If no reason, Freebies Given, Any feedback, Issue resolved 2nd check, Reason.
-Return ONLY a raw JSON array starting with [. No markdown. No preamble.
-Each element: {"driverID":"","date":"","ocName":"","hvdType":"","reason":"","resolved":"","unresolvedReason":"","freebies":"","feedback":"","secondCheck":"","hub":"","source":"live","subReason":"","reasonNotes":"","feedbackType":"","driverFeedback":""}.
-Map "HVD or Historical" to hvdType. Map "Reason for Visit" to reason. Map "Issue Resolved?" to resolved. Map "If no, reason" to unresolvedReason. Map "Freebies Given" to freebies. Map "Any feedback" to feedback. Map "Issue resolved 2nd check" to secondCheck. Map "Hub location" to hub.
-Only include rows where Driver ID is a valid number. Skip header rows and pivot table rows. Return [] if unreadable.`,
-      'Live sheet'
-    );
-  } catch(e){ errors.push('Live sheet: '+e.message); }
+  // 1. Live data — snapshot (15 Sep 2026), updated weekly
+  liveRows = LIVE_SNAPSHOT;
 
   // 2a. Form sheet — tab "Hub Visit Log"
   
@@ -643,7 +673,9 @@ function populateFilters(){
 function applyFilters(){
   const mon=el('f-month').value, hub=el('f-hub').value;
   const hvdF=el('f-hvd').value, resF=el('f-resolved').value;
-  const ocF=el('f-oc').value, q=el('search').value.toLowerCase();
+  const ocF=el('f-oc').value;
+  const isLogTab = el('tab-visitlog') && el('tab-visitlog').style.display !== 'none';
+  const q = (isLogTab ? (el('search-log')?.value||'') : (el('search')?.value||'')).toLowerCase();
   const active=mon||hub||hvdF||resF||ocF||q;
   el('clear-btn').style.display=active?'inline-flex':'none';
 
@@ -745,39 +777,42 @@ function cnt(rows,key){
 
 function drawCharts(){
   // Weekly stacked bar
-  const wH={},wHist={};
+  const wH={},wHist={},wNone={};
   FILT.forEach(r=>{
     const d=r._parsed; if(!d) return;
     const mon=new Date(d); mon.setDate(d.getDate()-((d.getDay()+6)%7));
     const k=mon.toISOString().slice(0,10);
     if(r.hvdType==='HVD') wH[k]=(wH[k]||0)+1;
-    else wHist[k]=(wHist[k]||0)+1;
+    else if(r.hvdType==='Historical') wHist[k]=(wHist[k]||0)+1;
+    else wNone[k]=(wNone[k]||0)+1;
   });
-  const wk=[...new Set([...Object.keys(wH),...Object.keys(wHist)])].sort();
+  const wk=[...new Set([...Object.keys(wH),...Object.keys(wHist),...Object.keys(wNone)])].sort();
   mkC('c-time','bar',{
     labels:wk.map(k=>k.slice(5)),
     datasets:[
       {label:'HVD',data:wk.map(k=>wH[k]||0),backgroundColor:'#16a34a',borderRadius:4,stack:'s',borderSkipped:false},
       {label:'Historical',data:wk.map(k=>wHist[k]||0),backgroundColor:'#93c5fd',borderRadius:4,stack:'s',borderSkipped:false},
+      {label:'Non HVD',data:wk.map(k=>wNone[k]||0),backgroundColor:'#f59e0b',borderRadius:4,stack:'s',borderSkipped:false},
     ],
   },LEG);
 
   // HVD donut
   const hvdC=FILT.filter(r=>r.hvdType==='HVD').length;
   const histC=FILT.filter(r=>r.hvdType==='Historical').length;
-  const otherC=FILT.length-hvdC-histC;
+  const otherC=FILT.filter(r=>!r.hvdType||r.hvdType.trim()==='').length;
   mkC('c-hvd','doughnut',{
-    labels:['HVD','Historical','Unknown'],
+    labels:['HVD','Historical','Non HVD'],
     datasets:[{data:[hvdC,histC,otherC],backgroundColor:['#16a34a','#2563eb','#e2e8f0'],borderWidth:4,borderColor:'#fff'}],
   },{...LEG_BOT,...NO_SCALE,cutout:'65%'});
 
   // Resolution donut
   const resY=FILT.filter(r=>effectiveResolved(r)==='Yes').length;
   const resN=FILT.filter(r=>effectiveResolved(r)==='No').length;
-  const resU=FILT.length-resY-resN;
+  const resNHVD=FILT.filter(r=>!r.hvdType||r.hvdType.trim()==='').length;
+  const resU=FILT.length-resY-resN-resNHVD;
   mkC('c-resolved','doughnut',{
-    labels:['Resolved','Unresolved','Unknown'],
-    datasets:[{data:[resY,resN,resU],backgroundColor:['#16a34a','#dc2626','#e2e8f0'],borderWidth:4,borderColor:'#fff'}],
+    labels:['Resolved','Unresolved','Non HVD','No Status'],
+    datasets:[{data:[resY,resN,resNHVD,resU>0?resU:0],backgroundColor:['#16a34a','#dc2626','#f59e0b','#e2e8f0'],borderWidth:4,borderColor:'#fff'}],
   },{...LEG_BOT,...NO_SCALE,cutout:'60%'});
 
 
@@ -963,26 +998,34 @@ function drawTable(){
   const rows=FILT.slice(0,150);
   el('tbl-title').textContent=`${FILT.length.toLocaleString()} visits`;
   const body=el('tbl-body');
-  if(!rows.length){body.innerHTML='<tr class="empty-row"><td colspan="12">No records match the filter.</td></tr>';el('tbl-footer').style.display='none';return;}
-  body.innerHTML=rows.map(r=>{
+  if(!rows.length){body.innerHTML='<tr class="empty-row"><td colspan="10">No records match the filter.</td></tr>';el('tbl-footer').style.display='none';return;}
+  body.innerHTML=rows.map((r,i)=>{
     const hvd=r.hvdType==='HVD', hist=r.hvdType==='Historical';
     const srcTag=r.source==='live'
       ?'<span class="src-tag src-live-tag">live</span>'
       :'<span class="src-tag src-new-tag">form</span>';
-    return `<tr class="${hvd?'hvd-row':hist?'hist-row':''}">
-      <td>${srcTag}</td>
+    const rowId = 'row-'+i;
+    const hasDetail = r.anyFeedback || r.unresolvedReason || r.secondCheck;
+    return `
+    <tr class="${hvd?'hvd-row':hist?'hist-row':''} ${hasDetail?'expand-row':''}" id="${rowId}" ${hasDetail?`onclick="toggleRow('${rowId}')"`:''}>
       <td class="td-id" style="color:${hvd?'#16a34a':hist?'#2563eb':'#0f172a'}">${r.driverID||'—'}</td>
-      <td>${hvdPill(r.hvdType)}</td>
       <td class="td-dim" style="white-space:nowrap">${fd(r._parsed)}</td>
       <td class="td-dim">${r.ocName||'—'}</td>
       <td>${r.hub||'—'}</td>
+      <td>${hvdPill(r.hvdType)}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.reason||'—'}</td>
       <td>${resPill(effectiveResolved(r))}</td>
-      <td class="td-dim" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.unresolvedReason||'—'}</td>
-      <td class="td-dim">${r.freebies||'—'}</td>
-      <td class="td-dim" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.feedback||r.driverFeedback||'—'}</td>
-      <td>${r.secondCheck?resPill(r.secondCheck):'—'}</td>
-    </tr>`;
+      <td class="td-dim" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.unresolvedReason||'—'}</td>
+      <td class="td-dim" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.anyFeedback||'—'}</td>
+      <td class="td-dim">${r.secondCheck||'—'}</td>
+    </tr>
+    ${hasDetail ? `<tr class="detail-row" id="${rowId}-detail">
+      <td colspan="10">
+        ${r.anyFeedback ? `<div style="margin-bottom:${(r.unresolvedReason||r.secondCheck)?'12px':'0'}"><div class="detail-label">Any Feedback</div><div class="detail-text">${r.anyFeedback}</div></div>` : ''}
+        ${r.unresolvedReason ? `<div style="margin-bottom:${r.secondCheck?'12px':'0'}"><div class="detail-label">If No, Reason</div><div class="detail-text">${r.unresolvedReason}</div></div>` : ''}
+        ${r.secondCheck ? `<div><div class="detail-label">Issue Resolved 2nd Check</div><div class="detail-text">${r.secondCheck}</div></div>` : ''}
+      </td>
+    </tr>` : ''}`;
   }).join('');
   const f=el('tbl-footer');
   if(FILT.length>150){f.style.display='block';f.textContent=`Showing 150 of ${FILT.length} records · use filters to narrow down`;}
@@ -990,18 +1033,37 @@ function drawTable(){
 }
 
 function switchTab(tab){
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  const pane = el('tab-'+tab);
-  if(pane) pane.classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b=>{
-    if(b.textContent.toLowerCase().includes(tab==='dashboard'?'dashboard':'visit')) b.classList.add('active');
-  });
-  if(tab==='visitlog'){
-    const searchLog = el('search-log'), search = el('search');
-    if(searchLog && search) searchLog.value = search.value;
+  // Hide all panes
+  const dashPane = el('tab-dashboard');
+  const logPane  = el('tab-visitlog');
+  const dashBtn  = el('tbtn-dashboard');
+  const logBtn   = el('tbtn-visitlog');
+
+  if(tab === 'visitlog'){
+    if(dashPane) dashPane.style.display = 'none';
+    if(logPane)  logPane.style.display  = 'block';
+    if(dashBtn)  dashBtn.classList.remove('active');
+    if(logBtn)   logBtn.classList.add('active');
+    const searchLog = el('search-log');
+    if(searchLog) searchLog.value = el('search')?.value || '';
+    drawTable();
+    scrollTo(0,0);
+  } else {
+    if(dashPane) dashPane.style.display = 'block';
+    if(logPane)  logPane.style.display  = 'none';
+    if(dashBtn)  dashBtn.classList.add('active');
+    if(logBtn)   logBtn.classList.remove('active');
     scrollTo(0,0);
   }
+}
+
+function toggleRow(id){
+  const row = document.getElementById(id);
+  const detail = document.getElementById(id+'-detail');
+  if(!row||!detail) return;
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  detail.classList.toggle('open', !isOpen);
 }
 
 loadData();
