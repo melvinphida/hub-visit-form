@@ -4,113 +4,144 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Driver Hub Visit — Bolt Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f5f5f3; --surface: #ffffff; --surface-alt: #f9f9f8;
-    --border: #e0dedd; --border-strong: #c8c7c4;
-    --text-primary: #1a1a18; --text-secondary: #5f5e5a; --text-muted: #9e9d99;
-    --danger: #c0392b; --accent: #1a5c8c; --accent-bg: #e8f0f5; --accent-border: #a3c4d9;
-    --radius: 8px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --bg: #ffffff; --surface: #ffffff; --surface-alt: #ffffff; --card: #f5f5f5;
+    --border: #e4e4e4; --border-strong: #c9c9c9;
+    --text-primary: #000000; --text-secondary: #545454; --text-muted: #8a8a8a;
+    --danger: #d93025;
+    --bolt: #34d186; --bolt-hover: #2cc07a; --on-bolt: #00160c;
+    --accent: #1f8a4c; --accent-bg: #e8f8ef; --accent-border: #b5e9cd;
+    --chip-on-bg: #000000; --chip-on-text: #ffffff;
+    --radius: 12px; --radius-lg: 24px;
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   /* Dark mode */
   :root.dark-mode {
-    --bg: #1a1a1a;
-    --surface: #2a2a2a;
-    --surface-alt: #333333;
-    --border: #444444;
-    --border-strong: #555555;
-    --text-primary: #e8e8e8;
-    --text-secondary: #b8b8b8;
-    --text-muted: #808080;
-    --accent-bg: #1a3a4a;
-    --accent-border: #2a5a7a;
+    --bg: #000000; --surface: #1c1c1c; --surface-alt: #1c1c1c; --card: #121212;
+    --border: #2e2e2e; --border-strong: #454545;
+    --text-primary: #ffffff; --text-secondary: #c4c4c4; --text-muted: #8c8c8c;
+    --accent: #34d186; --accent-bg: rgba(52,209,134,0.12); --accent-border: rgba(52,209,134,0.38);
+    --chip-on-bg: #34d186; --chip-on-text: #00160c;
   }
 
-  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; transition: background 0.2s, color 0.2s; }
 
   /* ---- Top nav ---- */
-  .top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; height: 60px; transition: background 0.2s, border-color 0.2s; }
-  .brand-bar { display: flex; align-items: center; gap: 10px; padding: 1rem 0; }
-  .bolt-logo { width: 32px; height: 32px; background: #34d058; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #0a2e18; }
-  .brand-name { font-size: 15px; font-weight: 600; }
-  .brand-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+  .top-nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; height: 72px; transition: background 0.2s, border-color 0.2s; }
+  .brand-bar { display: flex; align-items: baseline; gap: 12px; }
+  .bolt-wordmark { font-size: 28px; font-weight: 800; letter-spacing: -1px; color: var(--bolt); line-height: 1; }
+  .brand-sub { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
 
   .nav-links { display: flex; gap: 2rem; align-items: center; }
-  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; padding: 4px 0; border-bottom: 2px solid transparent; }
+  .nav-links a { color: var(--text-primary); text-decoration: none; font-size: 15px; font-weight: 600; transition: color 0.2s; padding: 6px 0; border-bottom: 2px solid transparent; }
   .nav-links a:hover { color: var(--accent); }
-  .nav-links a.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-links a.active { border-bottom-color: var(--bolt); }
 
-  .nav-controls { display: flex; gap: 1.5rem; align-items: center; }
-  .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 14px; color: var(--text-secondary); transition: background 0.2s, border-color 0.2s; }
-  .theme-toggle:hover { background: var(--bg); border-color: var(--border-strong); }
-  .theme-toggle span { font-size: 18px; }
+  .nav-controls { display: flex; gap: 1rem; align-items: center; }
+  .theme-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 14px; font-weight: 600; color: var(--text-primary); transition: background 0.2s, border-color 0.2s; }
+  .theme-toggle:hover { border-color: var(--border-strong); }
+  .theme-toggle span:first-child { font-size: 16px; }
 
   /* ---- Panel ---- */
-  .panel { padding: 2rem 1rem 4rem; transition: background 0.2s; }
+  .panel { flex: 1; padding: 3.5rem 1.25rem 5rem; transition: background 0.2s; }
 
   /* ---- Form styles ---- */
-  .form-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
-  .page-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem; max-width: 720px; margin-left: auto; margin-right: auto; }
-  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 6px; max-width: 720px; margin-left: auto; margin-right: auto; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: background 0.2s, border-color 0.2s; }
-  .card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .section-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-bg); border: 1px solid var(--accent-border); font-size: 11px; font-weight: 600; color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-  .card-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+  .form-wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1.6px; line-height: 1.05; margin-bottom: 10px; }
+  .page-desc { font-size: 17px; color: var(--text-secondary); line-height: 1.55; }
+  .card { background: var(--card); border: none; border-radius: var(--radius-lg); overflow: visible; transition: background 0.2s; }
+  .card-header { padding: 1.5rem 1.5rem 0; display: flex; align-items: center; gap: 12px; }
+  .section-num { width: 30px; height: 30px; border-radius: 50%; background: var(--bolt); font-size: 14px; font-weight: 700; color: var(--on-bolt); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .card-title { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: var(--text-primary); }
+  .card-body { padding: 1.25rem 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  @media (max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
-  .field { display: flex; flex-direction: column; gap: 5px; }
-  label { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
   label .req { color: var(--danger); margin-left: 2px; }
   input[type="text"], input[type="date"], select, textarea {
-    font-family: var(--font); font-size: 14px; color: var(--text-primary);
-    background: var(--surface-alt); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 9px 12px; width: 100%;
+    font-family: var(--font); font-size: 15px; color: var(--text-primary);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 13px 16px; width: 100%;
     outline: none; transition: border-color 0.15s, box-shadow 0.15s, background 0.2s; -webkit-appearance: none;
   }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,92,140,0.12); background: var(--surface); }
+  input:hover, select:hover, textarea:hover { border-color: var(--border-strong); }
+  input:focus, select:focus, textarea:focus { border-color: var(--bolt); box-shadow: 0 0 0 4px rgba(52,209,134,0.22); }
   input::placeholder, textarea::placeholder { color: var(--text-muted); }
-  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%239e9d99' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
-  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238a8a8a' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; cursor: pointer; }
+  textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
+
+  /* Feedback type chips */
   .sentiment-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .sentiment-btn { padding: 7px 14px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface-alt); font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; font-family: var(--font); }
-  .sentiment-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
-  .sentiment-btn.selected { border-color: var(--accent-border); background: var(--accent-bg); color: var(--accent); font-weight: 500; }
-  .submit-bar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 1.25rem; border-top: 1px solid var(--border); background: var(--surface-alt); }
-  .btn-ghost { font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text-secondary); background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 18px; cursor: pointer; transition: all 0.2s; }
-  .btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
-  .btn-primary { font-family: var(--font); font-size: 14px; font-weight: 600; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); padding: 9px 22px; cursor: pointer; transition: background 0.2s; }
-  .btn-primary:hover { background: #144d78; }
-  .btn-primary:disabled { background: #7aabcc; cursor: not-allowed; }
-  .error-msg { font-size: 12px; color: var(--danger); margin-top: 3px; display: none; }
+  .sentiment-btn { padding: 10px 18px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 14px; font-weight: 500; color: var(--text-primary); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .sentiment-btn:hover { border-color: var(--text-primary); }
+  .sentiment-btn.selected { border-color: var(--chip-on-bg); background: var(--chip-on-bg); color: var(--chip-on-text); font-weight: 600; }
+
+  /* Buttons */
+  .submit-bar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 1.25rem 1.5rem; }
+  .btn-ghost { font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--text-primary); background: transparent; border: 1px solid var(--border-strong); border-radius: 999px; padding: 13px 24px; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:hover { border-color: var(--text-primary); }
+  .btn-primary { font-family: var(--font); font-size: 15px; font-weight: 700; color: var(--on-bolt); background: var(--bolt); border: none; border-radius: 999px; padding: 14px 30px; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-primary:hover { background: var(--bolt-hover); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: #a8e8c8; color: #3f6b55; cursor: not-allowed; }
+
+  /* Errors */
+  .error-msg { font-size: 13px; font-weight: 500; color: var(--danger); margin-top: 2px; display: none; }
   .field.has-error input, .field.has-error select, .field.has-error textarea { border-color: var(--danger); }
   .field.has-error .choices__inner { border-color: var(--danger); }
   .field.has-error .error-msg { display: block; }
-  .success-banner { display: none; max-width: 720px; margin: 0 auto; background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 12px; padding: 2rem 1.5rem; text-align: center; }
-  .success-banner .icon { font-size: 36px; margin-bottom: 12px; }
-  .success-banner h2 { font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
-  .success-banner p { font-size: 14px; color: var(--text-secondary); }
-  .quick-close-btn { font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 20px; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
-  .quick-close-btn:hover { border-color: var(--border-strong); background: var(--surface); color: var(--text-primary); }
-  .quick-close-btn.selected { background: #fde68a; border-color: #f0d080; color: #7a5c0a; font-weight: 600; }
+
+  /* Success */
+  .success-banner { display: none; max-width: 760px; margin: 0 auto; background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: var(--radius-lg); padding: 3rem 1.5rem; text-align: center; }
+  .success-banner .icon { font-size: 44px; margin-bottom: 14px; }
+  .success-banner h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; color: var(--text-primary); margin-bottom: 8px; }
+  .success-banner p { font-size: 16px; color: var(--text-secondary); }
+  .success-banner a { font-weight: 700; }
+
+  /* Resolve & close */
+  .quick-close-bar { flex-direction: column; gap: 10px; background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: 16px; padding: 14px 16px; }
+  .quick-close-title { font-size: 14px; font-weight: 700; color: var(--accent); }
+  .quick-close-btn { font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--text-primary); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 9px 16px; cursor: pointer; transition: all 0.15s; }
+  .quick-close-btn:hover { border-color: var(--text-primary); }
+  .quick-close-btn.selected { background: var(--bolt); border-color: var(--bolt); color: var(--on-bolt); font-weight: 700; }
 
   /* AI suggestion styles */
   .ai-input-wrap { position: relative; }
-  .ai-suggestions { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 10; }
+  .ai-suggestions { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.14); z-index: 10; overflow: hidden; }
   .ai-suggestions.visible { display: block; }
-  .ai-suggestion-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .ai-suggestion-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
   .ai-suggestion-item:last-child { border-bottom: none; }
   .ai-suggestion-item:hover { background: var(--accent-bg); }
-  .ai-suggestion-main { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-  .ai-suggestion-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .ai-suggestion-badge { font-size: 11px; background: var(--accent-bg); color: var(--accent); border-radius: 4px; padding: 1px 6px; margin-left: 6px; font-weight: 500; }
-  .ai-loading { padding: 12px 14px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
-  .ai-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
+  .ai-suggestion-main { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .ai-suggestion-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .ai-suggestion-badge { font-size: 11px; background: var(--accent-bg); color: var(--accent); border-radius: 6px; padding: 1px 6px; margin-left: 6px; font-weight: 600; }
+  .ai-loading { padding: 12px 16px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .ai-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--bolt); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .selected-reason-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-bg); border: 1px solid var(--accent-border); color: var(--accent); border-radius: 20px; padding: 5px 10px; font-size: 13px; font-weight: 500; width: fit-content; }
-  .selected-reason-tag button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; }
+  .selected-reason-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--chip-on-bg); color: var(--chip-on-text); border-radius: 999px; padding: 8px 10px 8px 16px; font-size: 14px; font-weight: 600; width: fit-content; }
+  .selected-reason-tag button { background: none; border: none; color: inherit; opacity: 0.75; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+  .selected-reason-tag button:hover { opacity: 1; }
+
+  /* ---- Footer ---- */
+  .site-footer { background: #000000; color: #a6a6a6; padding: 1.75rem 2rem; display: flex; align-items: baseline; gap: 14px; font-size: 14px; }
+  .site-footer .bolt-wordmark { font-size: 24px; color: #ffffff; }
+
+  /* ---- Small screens ---- */
+  @media (max-width: 560px) {
+    .field-row { grid-template-columns: 1fr; }
+    .top-nav { padding: 0 1rem; }
+    .brand-sub, .nav-links { display: none; }
+    h1 { font-size: 36px; letter-spacing: -1px; }
+    .panel { padding-top: 2rem; }
+    .submit-bar { flex-direction: column-reverse; align-items: stretch; }
+    .btn-primary, .btn-ghost { width: 100%; }
+  }
 
 </style>
 </head>
@@ -119,8 +150,7 @@
 <!-- Top navigation -->
 <div class="top-nav">
   <div class="brand-bar">
-    <div class="bolt-logo">⚡</div>
-    <span class="brand-name">Bolt</span>
+    <span class="bolt-wordmark">Bolt</span>
     <span class="brand-sub">Operations · Hub Visit</span>
   </div>
   <div class="nav-links">
@@ -136,9 +166,9 @@
 
 <!-- ===================== FORM PANEL ===================== -->
 <div id="panel-form" class="panel active">
-  <div style="max-width:720px;margin:0 auto 1.5rem;">
+  <div style="max-width:760px;margin:0 auto 2rem;">
     <h1>Driver hub visit</h1>
-    <p class="page-desc" style="margin:6px 0 0;">Record a driver's hub visit. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
+    <p class="page-desc">Record a driver's hub visit. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
   </div>
 
   <form id="hubForm" class="form-wrap" novalidate="">
@@ -172,8 +202,8 @@
             <input type="text" name="ocName" placeholder="Team member name">
           </div>
         </div>
-        <div id="quickCloseBar" style="display:none; flex-direction:column; gap:8px; background:#fff8e8; border:1px solid #f0d080; border-radius:8px; padding:12px 14px;">
-          <span style="font-size:12px; font-weight:600; color:#7a5c0a; text-transform:uppercase; letter-spacing:0.4px;">Resolve &amp; close</span>
+        <div id="quickCloseBar" class="quick-close-bar" style="display:none;">
+          <span class="quick-close-title">Resolve &amp; close</span>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="quick-close-btn" data-val="Car Application">🚗 Car application</button>
             <button type="button" class="quick-close-btn" data-val="Upload Document">📄 Upload document</button>
@@ -188,7 +218,7 @@
       <div class="card-header"><div class="section-num">2</div><span class="card-title">Visit reason</span></div>
       <div class="card-body">
         <div class="field" id="f-reasons">
-          <label>Reason for visit <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:11px;">— not needed if resolve &amp; close</span></label>
+          <label>Reason for visit <span class="req">*</span> <span style="font-weight:400;color:var(--text-muted);font-size:13px;">— not needed if resolve &amp; close</span></label>
           <div class="ai-input-wrap">
             <input type="text" id="reasonInput" placeholder="Type to describe the issue — AI will suggest the best match…" autocomplete="off" oninput="onReasonInput(this.value)" onfocus="if(this.value) getAISuggestions(this.value)">
             <div class="ai-suggestions" id="aiSuggestions"></div>
@@ -247,6 +277,11 @@
     <p>The visit has been logged. <a href="https://melvinphida.github.io/hub-visit-form/#" onclick="showForm(); return false;" style="color:var(--accent)">Log another visit</a></p>
   </div>
 </div>
+
+<footer class="site-footer">
+  <span class="bolt-wordmark">Bolt</span>
+  <span>Operations · Hub Visit</span>
+</footer>
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBANXreFyynxjLO1ddeEYK7O5T5QXA2FYN-OwaRky4SgGLtyfXt4gqyYmnu3BS8jZiFA/exec';
@@ -307,12 +342,17 @@
     });
   });
 
-  /* ---- Sentiment buttons ---- */
+  /* ---- Feedback type buttons (tap the selected one again to clear it) ---- */
   document.querySelectorAll('.sentiment-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      const wasSelected = btn.classList.contains('selected');
       document.querySelectorAll('.sentiment-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      document.getElementById('feedbackType').value = btn.dataset.val;
+      if (wasSelected) {
+        document.getElementById('feedbackType').value = '';
+      } else {
+        btn.classList.add('selected');
+        document.getElementById('feedbackType').value = btn.dataset.val;
+      }
     });
   });
 
