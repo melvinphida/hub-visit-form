@@ -129,6 +129,9 @@
   .selected-reason-tag button:hover { opacity: 1; }
 
   /* ---- Footer ---- */
+  .pending-note { max-width: 760px; margin: 0 auto 1.25rem; background: #fff4d6; border: 1px solid #f2d27a; color: #6b4e00; border-radius: 16px; padding: 12px 16px; font-size: 14px; font-weight: 600; }
+  :root.dark-mode .pending-note { background: rgba(242,210,122,0.12); border-color: rgba(242,210,122,0.4); color: #f2d27a; }
+
   .site-footer { background: #000000; color: #a6a6a6; padding: 1.75rem 2rem; display: flex; align-items: baseline; gap: 14px; font-size: 14px; }
   .site-footer .bolt-wordmark { font-size: 24px; color: #ffffff; }
 
@@ -166,6 +169,7 @@
 
 <!-- ===================== FORM PANEL ===================== -->
 <div id="panel-form" class="panel active">
+  <div id="pendingNote" class="pending-note" style="display:none;"></div>
   <div style="max-width:760px;margin:0 auto 2rem;">
     <h1>Driver hub visit</h1>
     <p class="page-desc">Record a driver's hub visit. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
@@ -326,23 +330,69 @@
       if (!hubVal) { document.getElementById('f-hub').classList.add('has-error'); return; }
       document.querySelectorAll('.quick-close-btn').forEach(b => b.classList.remove('selected'));
       this.classList.add('selected');
-      if (!this.dataset.label) this.dataset.label = this.textContent;
-      const originalText = this.dataset.label;
-      this.textContent = 'Saving…'; this.disabled = true;
       const data = {
         driverId: driverIdVal, visitDate: new Date().toLocaleDateString('en-GB'),
         hub: hubVal, ocName: form.elements['ocName'].value || '',
         mainReason: this.dataset.val, subReason: '', reasonNotes: '', feedbackType: '', driverFeedback: '',
       };
-      try {
-        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        this.textContent = originalText; this.disabled = false;
-        form.style.display = 'none';
-        document.getElementById('successBanner').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch { alert('Could not save. Try again.'); this.textContent = originalText; this.disabled = false; this.classList.remove('selected'); }
+      queueVisit(data);
+      showSaved();
     });
   });
+
+  /* ---- Saving: confirm straight away, send in the background ---- */
+  // Each visit is kept on this device until it has been sent, so nothing is lost
+  // if the connection drops. Waiting visits are sent automatically when the
+  // connection returns or the next time the form is opened.
+  const PENDING_KEY = 'hubVisitPending';
+  function loadPending() { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); } catch { return []; } }
+  function savePending(list) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); } catch {} }
+
+  function sendVisit(data) {
+    // keepalive lets the browser finish sending even if the page is closed straight after saving
+    return fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  }
+
+  function queueVisit(data) {
+    const pending = loadPending();
+    pending.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 8), data });
+    savePending(pending);
+    flushPending();
+  }
+
+  let flushing = false;
+  async function flushPending() {
+    if (flushing) return;
+    flushing = true;
+    for (const item of loadPending()) {
+      try {
+        await sendVisit(item.data);
+        savePending(loadPending().filter(p => p.id !== item.id));
+      } catch {
+        break; // no connection: keep it and try again later
+      }
+    }
+    flushing = false;
+    updatePendingNote();
+  }
+
+  function updatePendingNote() {
+    const n = loadPending().length;
+    const note = document.getElementById('pendingNote');
+    if (!note) return;
+    note.style.display = n ? 'block' : 'none';
+    note.textContent = n ? `${n} visit${n > 1 ? 's' : ''} waiting to send. ${n > 1 ? 'They' : 'It'} will send automatically when the connection is back.` : '';
+  }
+
+  function showSaved() {
+    document.getElementById('hubForm').style.display = 'none';
+    document.getElementById('successBanner').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.addEventListener('online', flushPending);
+  setInterval(() => { if (loadPending().length) flushPending(); }, 30000);
+  flushPending(); // send anything left over from before
 
   /* ---- Feedback type buttons (tap the selected one again to clear it) ---- */
   document.querySelectorAll('.sentiment-btn').forEach(btn => {
@@ -530,8 +580,6 @@
   document.getElementById('hubForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     if (!validate()) { document.querySelector('.has-error').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-    const btn = document.getElementById('submitBtn');
-    btn.textContent = 'Saving…'; btn.disabled = true;
     const form = document.getElementById('hubForm');
     const mainReasonVal = selectedReason || '';
     const subReasonVal = document.getElementById('subIssueVal').value || '';
@@ -547,12 +595,8 @@
       driverFeedback: form.elements['driverFeedback'].value,
     };
     console.log('Submitting data:', JSON.stringify(data));
-    try {
-      await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      form.style.display = 'none';
-      document.getElementById('successBanner').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch { alert('Could not save. Try again.'); btn.textContent = 'Save hub visit'; btn.disabled = false; }
+    queueVisit(data);
+    showSaved();
   });
 
   /* ---- Reset ---- */
