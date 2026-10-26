@@ -326,7 +326,8 @@
       if (!hubVal) { document.getElementById('f-hub').classList.add('has-error'); return; }
       document.querySelectorAll('.quick-close-btn').forEach(b => b.classList.remove('selected'));
       this.classList.add('selected');
-      const originalText = this.textContent;
+      if (!this.dataset.label) this.dataset.label = this.textContent;
+      const originalText = this.dataset.label;
       this.textContent = 'Saving…'; this.disabled = true;
       const data = {
         driverId: driverIdVal, visitDate: new Date().toLocaleDateString('en-GB'),
@@ -335,6 +336,7 @@
       };
       try {
         await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        this.textContent = originalText; this.disabled = false;
         form.style.display = 'none';
         document.getElementById('successBanner').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -362,7 +364,7 @@
     { main: 'Reactivation', subs: [] },
     { main: 'Lead Registration', subs: [] },
     { main: 'Document Verification', subs: [] },
-    { main: 'Blocked Account', subs: ['Safety', 'Compliance', 'Verification'] },
+    { main: 'Blocked Account', subs: ['Safety', 'Compliance', 'Verification', 'Poor document quality'] },
     { main: 'Account Migration', subs: [] },
     { main: 'Update Profile Details', subs: [] },
     { main: 'Selfie Check Failure', subs: [] },
@@ -554,10 +556,13 @@
   });
 
   /* ---- Reset ---- */
-  function resetForm() {
-    if (!confirm('Clear all fields?')) return;
+  function resetForm(skipConfirm) {
+    if (!skipConfirm && !confirm('Clear all fields?')) return;
     document.getElementById('hubForm').reset();
     document.querySelectorAll('.sentiment-btn, .quick-close-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.quick-close-btn').forEach(b => { if (b.dataset.label) b.textContent = b.dataset.label; b.disabled = false; });
+    const otherWrap = document.getElementById('otherNoteWrap');
+    if (otherWrap) { otherWrap.style.display = 'none'; const otherInput = document.getElementById('otherNote'); if (otherInput) otherInput.value = ''; }
     document.getElementById('feedbackType').value = '';
     document.getElementById('quickCloseVal').value = '';
     document.getElementById('quickCloseBar').style.display = 'none';
@@ -575,7 +580,7 @@
   function showForm() {
     document.getElementById('hubForm').style.display = '';
     document.getElementById('successBanner').style.display = 'none';
-    resetForm();
+    resetForm(true);
   }
   ['f-driverId', 'f-hub'].forEach(id => {
     const w = document.getElementById(id);
